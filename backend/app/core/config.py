@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/threat_lens"
     ollama_host: str = "http://localhost:11434"
+    ollama_model: str = "llama3.1"
 
     cors_origins: list[str] = ["http://localhost:3000"]
 
