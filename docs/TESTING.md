@@ -15,6 +15,7 @@ Manual Testing
 - Screenshot Upload
 - QR Detection
 - Email Analysis
+- SMS Analysis
 
 Goal
 

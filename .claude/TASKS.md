@@ -17,15 +17,21 @@
 
 ## Phase 3
 
+- [ ] Email Scanner (POST /scan/email)
+- [ ] SMS Scanner (POST /scan/sms)
+- [ ] Shared scam-pattern detection service
+
+## Phase 4
+
 - [ ] Screenshot OCR
 - [ ] QR Detection
 
-## Phase 4
+## Phase 5
 
 - [ ] Ollama Integration
 - [ ] AI Risk Analysis
 
-## Phase 5
+## Phase 6
 
 - [ ] Dashboard
 - [ ] Reports

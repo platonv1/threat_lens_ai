@@ -10,16 +10,20 @@ URL Scanner
 
 ## Phase 3
 
-OCR
+Message Scanner (Email + SMS)
 
 ## Phase 4
 
-AI Analysis
+OCR
 
 ## Phase 5
 
-Dashboard
+AI Analysis
 
 ## Phase 6
+
+Dashboard
+
+## Phase 7
 
 Reporting

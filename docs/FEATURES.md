@@ -27,6 +27,15 @@ Analyze pasted email content for common scam patterns.
 
 ---
 
+## SMS Scanner
+
+Status: Planned
+
+Description:
+Analyze pasted SMS text for common scam patterns (smishing links, urgency language, spoofed senders). Shares its analysis logic with the Email Scanner.
+
+---
+
 ## QR Scanner
 
 Status: Planned

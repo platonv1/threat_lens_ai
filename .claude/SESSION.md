@@ -28,9 +28,8 @@ URL Scanner backend is implemented and merged to `main`; frontend still pending.
 
 ## Known Issues
 
-- **SMS scanner gap**: `CLAUDE.md` and `PRD.md` list SMS message scanning as a core capability, but `FEATURES.md`, `API.md`, `DATABASE.md`, `TASKS.md`, and `ROADMAP.md` omit it entirely. Needs a decision: in scope or drop from vision docs.
-- **Email Scanner untracked**: Email Scanner is a defined feature (`FEATURES.md`, `API.md`) but has no phase in `TASKS.md` or `ROADMAP.md`.
 - Minor ambiguities to resolve before their respective features are designed: OCR engine choice (EasyOCR vs. Tesseract — primary/fallback unclear), LLM model choice (Llama 3.1 vs. Qwen), whether auth/JWT is in scope for this local-first prototype, `scans.scan_type` enum not defined, `UI_UX.md`'s Settings page has no backing feature.
+- Pre-existing, not fixed this session: `ROADMAP.md` and `.claude/TASKS.md` disagree on phase count — `ROADMAP.md` splits Dashboard (Phase 6) and Reporting (Phase 7) into separate phases, `TASKS.md` combines them into one Phase 6. Left as-is to avoid scope creep while resolving the SMS/Email gap below; worth reconciling in its own pass.
 
 ### URL Scanner frontend (this session)
 
@@ -46,6 +45,18 @@ URL Scanner backend is implemented and merged to `main`; frontend still pending.
 
 - `backend/Dockerfile` doesn't `COPY` `alembic.ini` or `migrations/`, so `alembic upgrade head` can't run inside a freshly built container without manually copying those files in first.
 
+### SMS/Email planning gap — resolved (this session)
+
+Decision: SMS scanning stays in scope (per `CLAUDE.md`/`PRD.md`), and is built as a combined "Message Scanner" feature alongside Email Scanner — two separate endpoints (`POST /scan/email`, `POST /scan/sms`) sharing one internal scam-pattern analysis service, both delivered in the same new phase.
+
+Docs updated to reflect this:
+- `docs/FEATURES.md`: added an "SMS Scanner" entry next to Email Scanner, noting the shared analysis logic.
+- `docs/API.md`: added `POST /scan/sms` next to `POST /scan/email`.
+- `docs/ROADMAP.md`: inserted "Message Scanner (Email + SMS)" as the new Phase 3; OCR/AI Analysis/Dashboard/Reporting all shifted down one phase (now 4–7).
+- `.claude/TASKS.md`: same renumbering; new Phase 3 task list is Email Scanner, SMS Scanner, and the shared scam-pattern detection service.
+- `docs/TESTING.md`: added "SMS Analysis" to the manual testing checklist next to "Email Analysis".
+- No change needed to `DATABASE.md`, `CLAUDE.md`, or `PRD.md` — `scan_type` is still a free-text column (no enum to update), and the vision docs already mentioned SMS correctly.
+
 ## Next Goal
 
-Resolve the SMS/Email planning gaps and remaining ambiguities (OCR engine, LLM model, auth scope, `scan_type` enum) before starting Phase 3. Consider fixing the `Dockerfile` migrations gap above first since it'll block the next container rebuild too.
+Design and implement the Phase 3 Message Scanner (Email + SMS) per `CLAUDE.md`'s workflow (design → backend → frontend → tests → docs → `SESSION.md`). Also worth doing first/alongside: fix the `backend/Dockerfile` migrations gap above, and resolve the remaining ambiguities (OCR engine, LLM model, auth scope, `scan_type` enum, `TASKS.md`/`ROADMAP.md` phase-count mismatch).

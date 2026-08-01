@@ -6,6 +6,8 @@ POST /scan/image
 
 POST /scan/email
 
+POST /scan/sms
+
 POST /scan/qr
 
 GET /scan/{id}
