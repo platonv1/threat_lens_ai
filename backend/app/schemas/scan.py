@@ -28,6 +28,20 @@ class URLScanRequest(BaseModel):
         return candidate
 
 
+class MessageScanRequest(BaseModel):
+    text: str
+
+    @field_validator("text")
+    @classmethod
+    def normalize_and_validate(cls, value: str) -> str:
+        candidate = value.strip()
+        if not candidate:
+            raise ValueError("text must not be empty")
+        if len(candidate) > 20_000:
+            raise ValueError("text must not exceed 20000 characters")
+        return candidate
+
+
 class ScanResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
