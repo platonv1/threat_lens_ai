@@ -1,4 +1,4 @@
-import { ScanForm } from "@/components/ScanForm";
+import { ScanTabs } from "@/components/ScanTabs";
 
 export default function Home() {
   return (
@@ -8,10 +8,10 @@ export default function Home() {
           AI Internet Safety Center
         </h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Check a URL for phishing and scam risk before you visit it.
+          Check a URL, email, or SMS message for phishing and scam risk.
         </p>
         <div className="mt-8">
-          <ScanForm />
+          <ScanTabs />
         </div>
       </main>
     </div>
