@@ -82,10 +82,17 @@ Tests: 42/42 backend (`pytest -q`), 26/26 frontend (`npm test`, 6 test files) �
 
 **Bug found and fixed during verification**: the first `POST /scan/email` against the freshly-built Docker `backend` container failed with a 500 (`sqlalchemy.exc.ProgrammingError: relation "scans" does not exist`) — this is exactly the pre-existing `backend/Dockerfile` migrations gap noted below (fresh container, no `alembic upgrade head` run). Worked around it the same way as the URL Scanner frontend session: `docker compose cp` the `alembic.ini`/`migrations/` into the running container and ran `alembic upgrade head` by hand, then re-verified successfully. This is a workaround, not a fix — the underlying Dockerfile gap is still open (see Known Issues / Next Goal).
 
+### `backend/Dockerfile` migrations gap — fixed (this session)
+
+Root cause: the Dockerfile only `COPY`'d `app/`, not `alembic.ini`/`migrations/`, and nothing ran `alembic upgrade head` on container start — so a freshly built container had no tables until someone manually `docker compose cp`'d the migration files in and ran alembic by hand (hit twice now, in the URL Scanner frontend session and the Message Scanner session).
+
+Fix: added `backend/docker-entrypoint.sh` (`alembic upgrade head` then `exec "$@"`), set it as the image's `ENTRYPOINT`, and `COPY`'d `alembic.ini`/`migrations/` into the image alongside `app/`. Using `ENTRYPOINT` rather than editing `CMD` matters here — `docker-compose.yml`'s `backend.command` overrides `CMD` (to add `--reload`), which would have silently dropped a migration step added there; `ENTRYPOINT` always runs first regardless of how `CMD` is overridden.
+
+Verified: `docker compose down -v` (wipes the `postgres_data` volume) → `docker compose build backend` → `docker compose up -d db backend` against the now-empty DB, with **no manual migration step** — logs show `alembic.runtime.migration ... Running upgrade  -> bd7a0f83bdb0` on startup, `GET /health` → `200`, and `POST /scan/email` persists successfully on the first request. Also verified idempotency: `docker compose restart backend` against the now-migrated DB re-runs alembic as a fast no-op with no errors. Backend test suite unaffected (43/43 still passing — no application code changed).
+
 ## Next Goal
 
 Move on to Phase 4 (OCR) per `docs/ROADMAP.md`. Before or alongside that, the following open items are still outstanding:
-- `backend/Dockerfile` doesn't `COPY` `alembic.ini`/`migrations/`, so a freshly built container needs migrations applied manually (`docker compose cp` + `alembic upgrade head`) before any scan endpoint that persists will work — hit again this session, still unfixed.
 - `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted last session, not yet reconciled).
 - OCR engine choice (EasyOCR vs. Tesseract — primary/fallback still unclear) — relevant now that Phase 4 is next.
 - LLM model choice (Llama 3.1 vs. Qwen) — still unresolved; also worth actually running Ollama locally next session to verify `summarize`/`summarize_message` against a real model instead of only the fallback path.
