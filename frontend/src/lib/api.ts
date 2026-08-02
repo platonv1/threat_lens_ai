@@ -48,3 +48,21 @@ export async function scanEmail(text: string): Promise<ScanResponse> {
 export async function scanSms(text: string): Promise<ScanResponse> {
   return postScan("/scan/sms", { text });
 }
+
+export async function extractText(image: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("image", image);
+
+  const response = await fetch(`${API_URL}/ocr/extract`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
+  }
+
+  const data = (await response.json()) as { text: string };
+  return data.text;
+}

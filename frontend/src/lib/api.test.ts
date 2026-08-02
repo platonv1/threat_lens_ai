@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ScanError, scanEmail, scanSms, scanUrl } from "./api";
+import { ScanError, extractText, scanEmail, scanSms, scanUrl } from "./api";
 
 const cases = [
   { name: "scanUrl", fn: scanUrl, path: "/scan/url", input: "example.com", body: { url: "example.com" } },
@@ -69,5 +69,44 @@ describe.each(cases)("$name", ({ fn, path, input, body }) => {
     );
 
     await expect(fn(input)).rejects.toThrow(/500/);
+  });
+});
+
+describe("extractText", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("posts the image as multipart form data and returns the extracted text", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ text: "extracted text" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const file = new File(["fake-image-bytes"], "screenshot.png", { type: "image/png" });
+    const result = await extractText(file);
+
+    expect(result).toBe("extracted text");
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toContain("/ocr/extract");
+    expect(options.method).toBe("POST");
+    expect(options.body).toBeInstanceOf(FormData);
+    expect((options.body as FormData).get("image")).toBe(file);
+  });
+
+  it("throws a ScanError with the backend's message on a non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: async () => ({ detail: "Unsupported image type." }),
+      }),
+    );
+
+    const file = new File(["x"], "bad.txt", { type: "text/plain" });
+    await expect(extractText(file)).rejects.toThrow(/Unsupported image type/);
+    await expect(extractText(file)).rejects.toBeInstanceOf(ScanError);
   });
 });
