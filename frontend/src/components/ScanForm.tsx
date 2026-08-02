@@ -1,30 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ScanError, scanUrl } from "@/lib/api";
-import type { ScanResponse } from "@/types/scan";
-import { RiskMeter } from "./RiskMeter";
-import { ReportCard } from "./ReportCard";
+import { scanUrl } from "@/lib/api";
+import { useScan } from "@/hooks/useScan";
+import { ScanResultView } from "./ScanResultView";
 
 export function ScanForm() {
   const [url, setUrl] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading">("idle");
-  const [result, setResult] = useState<ScanResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { status, result, error, run } = useScan(scanUrl);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setStatus("loading");
-    setError(null);
-    setResult(null);
-
-    try {
-      setResult(await scanUrl(url));
-    } catch (err) {
-      setError(err instanceof ScanError ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setStatus("idle");
-    }
+    await run(url);
   }
 
   return (
@@ -52,12 +39,7 @@ export function ScanForm() {
 
       {error && <p className="mt-4 text-red-600 dark:text-red-400">{error}</p>}
 
-      {result && (
-        <div className="mt-6">
-          <RiskMeter score={result.risk_score} verdict={result.verdict} />
-          <ReportCard findings={result.findings} aiSummary={result.ai_summary} />
-        </div>
-      )}
+      {result && <ScanResultView result={result} />}
     </div>
   );
 }
