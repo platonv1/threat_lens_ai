@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, scan
+from app.api.routes import health, ocr, scan
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -18,3 +18,4 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(scan.router)
+app.include_router(ocr.router)

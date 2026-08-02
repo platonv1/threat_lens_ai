@@ -10,3 +10,4 @@ python-whois
 dnspython
 httpx
 easyocr
+python-multipart
