@@ -10,10 +10,10 @@
 
 ## Phase 2
 
-- [ ] URL Scanner
-- [ ] WHOIS
-- [ ] DNS
-- [ ] SSL Validation
+- [x] URL Scanner
+- [x] WHOIS
+- [x] DNS
+- [x] SSL Validation
 
 ## Phase 3
 

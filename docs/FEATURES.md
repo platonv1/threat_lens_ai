@@ -2,7 +2,7 @@
 
 ## URL Scanner
 
-Status: Planned
+Status: Implemented
 
 Description:
 Analyze URLs using WHOIS, DNS, SSL, and a local LLM.
