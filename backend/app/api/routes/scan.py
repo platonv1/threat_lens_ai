@@ -5,8 +5,9 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.scan import Finding, ScanResponse, URLScanRequest
+from app.schemas.scan import Finding, MessageScanRequest, ScanResponse, URLScanRequest
 from app.services.dns_service import check_dns
+from app.services.message_scan_service import scan_message
 from app.services.ollama_service import summarize
 from app.services.risk_scorer import score_findings
 from app.services.scan_persistence import persist_scan
@@ -29,3 +30,13 @@ async def scan_url(payload: URLScanRequest, db: Session = Depends(get_db)) -> Sc
     ai_summary = await summarize(payload.url, findings, risk_score, verdict)
 
     return persist_scan(db, "url", payload.url, findings, risk_score, verdict, ai_summary)
+
+
+@router.post("/email", response_model=ScanResponse)
+async def scan_email(payload: MessageScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
+    return await scan_message("email", payload.text, db)
+
+
+@router.post("/sms", response_model=ScanResponse)
+async def scan_sms(payload: MessageScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
+    return await scan_message("sms", payload.text, db)
