@@ -22,17 +22,29 @@ function extractErrorMessage(status: number, body: unknown): string {
   return `Scan failed (${status}).`;
 }
 
-export async function scanUrl(url: string): Promise<ScanResponse> {
-  const response = await fetch(`${API_URL}/scan/url`, {
+async function postScan(path: string, body: unknown): Promise<ScanResponse> {
+  const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new ScanError(extractErrorMessage(response.status, body));
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
   }
 
   return response.json() as Promise<ScanResponse>;
+}
+
+export async function scanUrl(url: string): Promise<ScanResponse> {
+  return postScan("/scan/url", { url });
+}
+
+export async function scanEmail(text: string): Promise<ScanResponse> {
+  return postScan("/scan/email", { text });
+}
+
+export async function scanSms(text: string): Promise<ScanResponse> {
+  return postScan("/scan/sms", { text });
 }
