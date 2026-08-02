@@ -15,10 +15,18 @@ def _build_prompt(url: str, findings: list[Finding], score: int, verdict: str) -
     )
 
 
-async def summarize(url: str, findings: list[Finding], score: int, verdict: str) -> str:
-    settings = get_settings()
-    prompt = _build_prompt(url, findings, score, verdict)
+def _build_message_prompt(scan_type: str, findings: list[Finding], score: int, verdict: str) -> str:
+    findings_text = "\n".join(f"- [{f.severity}] {f.check}: {f.message}" for f in findings)
+    label = "email" if scan_type == "email" else "SMS message"
+    return (
+        f"You are a security assistant. A scan of a pasted {label} produced a risk score of "
+        f"{score}/100 ({verdict}) based on these findings:\n{findings_text}\n\n"
+        f"Explain in 2-3 plain-language sentences whether this {label} looks like a scam and why."
+    )
 
+
+async def _generate(prompt: str) -> str:
+    settings = get_settings()
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             response = await client.post(
@@ -30,3 +38,11 @@ async def summarize(url: str, findings: list[Finding], score: int, verdict: str)
             return str(data["response"]).strip()
     except Exception:
         return _FALLBACK_SUMMARY
+
+
+async def summarize(url: str, findings: list[Finding], score: int, verdict: str) -> str:
+    return await _generate(_build_prompt(url, findings, score, verdict))
+
+
+async def summarize_message(scan_type: str, findings: list[Finding], score: int, verdict: str) -> str:
+    return await _generate(_build_message_prompt(scan_type, findings, score, verdict))
