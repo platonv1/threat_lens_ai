@@ -17,9 +17,9 @@
 
 ## Phase 3
 
-- [ ] Email Scanner (POST /scan/email)
-- [ ] SMS Scanner (POST /scan/sms)
-- [ ] Shared scam-pattern detection service
+- [x] Email Scanner (POST /scan/email)
+- [x] SMS Scanner (POST /scan/sms)
+- [x] Shared scam-pattern detection service
 
 ## Phase 4
 

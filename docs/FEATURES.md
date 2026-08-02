@@ -20,7 +20,7 @@ Extract text with OCR and analyze for phishing indicators.
 
 ## Email Scanner
 
-Status: Planned
+Status: Implemented
 
 Description:
 Analyze pasted email content for common scam patterns.
@@ -29,7 +29,7 @@ Analyze pasted email content for common scam patterns.
 
 ## SMS Scanner
 
-Status: Planned
+Status: Implemented
 
 Description:
 Analyze pasted SMS text for common scam patterns (smishing links, urgency language, spoofed senders). Shares its analysis logic with the Email Scanner.

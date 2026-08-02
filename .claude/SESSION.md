@@ -57,6 +57,37 @@ Docs updated to reflect this:
 - `docs/TESTING.md`: added "SMS Analysis" to the manual testing checklist next to "Email Analysis".
 - No change needed to `DATABASE.md`, `CLAUDE.md`, or `PRD.md` — `scan_type` is still a free-text column (no enum to update), and the vision docs already mentioned SMS correctly.
 
+### Message Scanner: Email + SMS (this session)
+
+Implemented the Phase 3 Message Scanner end-to-end per `CLAUDE.md`'s workflow (design → backend → frontend → tests → docs → `SESSION.md`), across 11 tasks.
+
+Backend:
+- `backend/app/schemas/`: `MessageScanRequest` (validates non-empty `text`).
+- `backend/app/services/scam_pattern_service.py`: pure pattern-matching `detect_scam_patterns()` — checks for urgency language, credential requests, and other common scam signals; shared by both email and SMS analysis (no per-channel logic needed at this layer).
+- `backend/app/services/ollama_service.py`: added `summarize_message()`, sharing the existing `_generate()` helper with `summarize()` (the URL scanner's summary call) rather than duplicating the Ollama HTTP call.
+- `backend/app/services/scan_persistence.py`: new `persist_scan()` extracted from the URL route so both `scan_url` and the new message routes write `Scan`/`ScanResult` rows through one shared function instead of duplicating the insert/commit logic.
+- `backend/app/services/message_scan_service.py`: orchestrator (`scan_message`) — runs `detect_scam_patterns`, `summarize_message`, and `persist_scan` for a given channel (`email`/`sms`).
+- `backend/app/api/routes/scan.py`: added `POST /scan/email` and `POST /scan/sms`, and refactored `scan_url` to call the same `persist_scan` helper instead of its own inline persistence code.
+
+Frontend:
+- `frontend/src/hooks/useScan.ts` and `frontend/src/components/ScanResultView.tsx`: extracted from `ScanForm` so the risk meter + findings + AI summary rendering and the scan-request/loading/error state machine are shared, not duplicated, between the URL form and the new message form.
+- `frontend/src/lib/api.ts`: added `scanEmail`/`scanSms`, sharing the `postScan` helper (and its error-extraction logic) with `scanUrl`.
+- `frontend/src/components/MessageScanForm.tsx`: textarea-based form for email/SMS content, reusing `useScan`/`ScanResultView`.
+- `frontend/src/components/ScanTabs.tsx`: URL/Email/SMS tab switcher, defaults to URL, unmounts the inactive tab's form (so switching tabs resets any in-progress state rather than leaking it across tabs).
+- `frontend/src/app/page.tsx`: now renders `ScanTabs` instead of the bare `ScanForm`.
+
+Tests: 42/42 backend (`pytest -q`), 26/26 frontend (`npm test`, 6 test files) — both green at the end of this session.
+
+**Manual browser verification** (Docker `db`+`backend`, `npm run dev` frontend, real Chrome via browser automation): Email tab with `"URGENT: verify your password immediately or your account will be suspended."` → risk score 55, `Suspicious` verdict, `URGENCY_LANGUAGE` + `CREDENTIAL_REQUEST` findings, as expected. SMS tab with `"Hi, want to grab lunch tomorrow?"` → score 0, `Safe`, "No issues found." URL tab regression check → form renders cleanly after switching tabs, no leftover state. Ollama was not reachable locally this session, so `ai_summary` showed the fallback string `"AI summary unavailable."` on both message scans — expected/documented behavior, not a bug.
+
+**Bug found and fixed during verification**: the first `POST /scan/email` against the freshly-built Docker `backend` container failed with a 500 (`sqlalchemy.exc.ProgrammingError: relation "scans" does not exist`) — this is exactly the pre-existing `backend/Dockerfile` migrations gap noted below (fresh container, no `alembic upgrade head` run). Worked around it the same way as the URL Scanner frontend session: `docker compose cp` the `alembic.ini`/`migrations/` into the running container and ran `alembic upgrade head` by hand, then re-verified successfully. This is a workaround, not a fix — the underlying Dockerfile gap is still open (see Known Issues / Next Goal).
+
 ## Next Goal
 
-Design and implement the Phase 3 Message Scanner (Email + SMS) per `CLAUDE.md`'s workflow (design → backend → frontend → tests → docs → `SESSION.md`). Also worth doing first/alongside: fix the `backend/Dockerfile` migrations gap above, and resolve the remaining ambiguities (OCR engine, LLM model, auth scope, `scan_type` enum, `TASKS.md`/`ROADMAP.md` phase-count mismatch).
+Move on to Phase 4 (OCR) per `docs/ROADMAP.md`. Before or alongside that, the following open items are still outstanding:
+- `backend/Dockerfile` doesn't `COPY` `alembic.ini`/`migrations/`, so a freshly built container needs migrations applied manually (`docker compose cp` + `alembic upgrade head`) before any scan endpoint that persists will work — hit again this session, still unfixed.
+- `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted last session, not yet reconciled).
+- OCR engine choice (EasyOCR vs. Tesseract — primary/fallback still unclear) — relevant now that Phase 4 is next.
+- LLM model choice (Llama 3.1 vs. Qwen) — still unresolved; also worth actually running Ollama locally next session to verify `summarize`/`summarize_message` against a real model instead of only the fallback path.
+- Whether auth/JWT is in scope for this local-first prototype.
+- `scans.scan_type` enum not defined (still a free-text column; now has three real values in practice — `url`, `email`, `sms` — worth formalizing before more scan types are added).
