@@ -20,6 +20,7 @@
 - [x] Email Scanner (POST /scan/email)
 - [x] SMS Scanner (POST /scan/sms)
 - [x] Shared scam-pattern detection service
+- [x] Image upload (OCR) input mode for Email/SMS Scanner
 
 ## Phase 4
 

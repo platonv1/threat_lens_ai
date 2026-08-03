@@ -25,7 +25,6 @@ AI
 OCR
 
 - EasyOCR
-- Tesseract
 
 Deployment
 

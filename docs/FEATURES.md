@@ -23,7 +23,7 @@ Extract text with OCR and analyze for phishing indicators.
 Status: Implemented
 
 Description:
-Analyze pasted email content for common scam patterns.
+Analyze pasted email content for common scam patterns. Also accepts an uploaded screenshot — text is extracted via OCR and shown for review before scanning.
 
 ---
 
@@ -32,7 +32,7 @@ Analyze pasted email content for common scam patterns.
 Status: Implemented
 
 Description:
-Analyze pasted SMS text for common scam patterns (smishing links, urgency language, spoofed senders). Shares its analysis logic with the Email Scanner.
+Analyze pasted SMS text for common scam patterns (smishing links, urgency language, spoofed senders). Shares its analysis logic with the Email Scanner. Also accepts an uploaded screenshot — text is extracted via OCR and shown for review before scanning.
 
 ---
 

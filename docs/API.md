@@ -8,6 +8,8 @@ POST /scan/email
 
 POST /scan/sms
 
+POST /ocr/extract
+
 POST /scan/qr
 
 GET /scan/{id}
