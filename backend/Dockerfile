@@ -3,7 +3,10 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# CPU-only torch first: easyocr's default resolution pulls full CUDA/NCCL wheels
+# (multiple GB) that this service never uses (ocr_service.py runs gpu=False).
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 COPY alembic.ini .
 COPY migrations ./migrations
