@@ -35,4 +35,7 @@
 ## Phase 6
 
 - [ ] Dashboard
+
+## Phase 7
+
 - [ ] Reports
