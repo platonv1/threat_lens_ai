@@ -111,11 +111,20 @@ Tests: 51/51 backend (`pytest -q`), 36/36 frontend (`npm test`) — both green.
 
 `npx tsc --noEmit` and `npm run lint` both clean.
 
+### Ollama verified locally against a real model (this session)
+
+Previously `ai_summary` had only ever been exercised via the fallback path (`"AI summary unavailable."`, since no local Ollama had been running in any prior session) or via `ollama_service`'s mocked unit tests. This session, `ollama` was installed (`brew install ollama`) and `llama3.1` pulled (~4.9GB) and run locally (`ollama serve` on the host, `http://localhost:11434`) to close out this gap.
+
+Findings:
+- The very first call to `summarize_message` fell back to `"AI summary unavailable."` even with Ollama reachable — root cause: `_generate()`'s 5s `httpx` timeout is shorter than Ollama's first-ever model load time (loading the ~5GB model into memory). Every call after that first one (model stays warm) completed in well under a second. This is expected/acceptable behavior, not a bug — the fallback firing on a slow first request is exactly the graceful-degradation behavior `_generate()`'s broad `except Exception` is designed for; not fixed this session.
+- With the model warm, directly exercised `summarize_message` (email + SMS, suspicious and safe cases) and `summarize` (URL, safe case) against the real model — all three returned coherent, relevant plain-language explanations matching their findings/verdict, confirming the prompts in `_build_prompt`/`_build_message_prompt` produce sensible output from a real LLM, not just from the mocked tests.
+- This closes the "worth actually running Ollama locally to verify against a real model" item from last session's Next Goal. The "Llama 3.1 vs. Qwen" model-choice question itself remains open — only Llama 3.1 has been tried.
+
 ## Next Goal
 
 Phase 4's remaining scope — standalone Screenshot Scanner (`POST /scan/image`, auto-scan with persisted image, no review step) and QR Detection — is still unbuilt; this session only pulled forward the OCR-engine slice into the Message Scanner. Other open items:
 - `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted last session, not yet reconciled).
-- LLM model choice (Llama 3.1 vs. Qwen) — still unresolved; also worth actually running Ollama locally next session to verify `summarize`/`summarize_message` against a real model instead of only the fallback path.
+- LLM model choice (Llama 3.1 vs. Qwen) — Llama 3.1 now verified working end-to-end against a real model (see above); Qwen not yet tried, so the choice itself is still open.
 - Whether auth/JWT is in scope for this local-first prototype.
 - `scans.scan_type` enum not defined (still a free-text column; now has three real values in practice — `url`, `email`, `sms` — worth formalizing before more scan types are added).
 - `scan_url`'s business logic still lives inline in the route (`backend/app/api/routes/scan.py`), while `scan_email`/`scan_sms` delegate to `message_scan_service` — an architectural asymmetry worth resolving (extracting a matching `url_scan_service`) before Phase 4 adds another scan type.
