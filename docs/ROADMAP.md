@@ -22,7 +22,7 @@ AI Analysis
 
 ## Phase 6
 
-Dashboard
+Scan History
 
 ## Phase 7
 

@@ -34,7 +34,10 @@
 
 ## Phase 6
 
-- [ ] Dashboard
+- [ ] GET /scan/{id}
+- [ ] GET /history
+- [ ] DELETE /history/{id}
+- [ ] Frontend History page (list, scan detail view, delete)
 
 ## Phase 7
 

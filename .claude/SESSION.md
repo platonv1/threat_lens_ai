@@ -160,10 +160,22 @@ Was a free-text `String(20)` column with no DB-level validation, despite only ev
 - `docs/DATABASE.md` updated to note `scan_type` is now a Postgres enum with its five values.
 - Backend tests: 69/69 passing (2 new: accepts an enum member or matching string, rejects an invalid one).
 
+### Phase 6 scoping pass (this session)
+
+Asked "what's left before Phase 6" and found this file's own "Next Goal" list was stale on two items it had been carrying for several sessions:
+- **Auth/JWT** — not actually open. `docs/SECURITY.md` already has a written decision (out of scope, single-user local tool, no routes should require auth) from an earlier session; this file just never stopped listing it as open.
+- **Data retention policy** — also not actually open. `docs/DATABASE.md` already has a written decision (no retention policy, accepted for local-only use, explicitly flagged as not okay for a hosted deployment) from an earlier session; same story.
+
+The real gap: `docs/API.md` documents `GET /scan/{id}`, `GET /history`, `DELETE /history/{id}`, but none of the three exist in `app/api/routes/scan.py` — flagged as "not yet implemented" all the way back in the original URL Scanner session and never picked up since. There was also no `FEATURES.md` entry for this at all, and a naming drift: `TASKS.md`/`ROADMAP.md` called Phase 6 "Dashboard," but that word appears nowhere in `PRD.md` or `UI_UX.md` — both call it "History." No "Dashboard"/stats concept has ever actually been scoped.
+
+Changes (docs only, no endpoint code yet):
+- `docs/FEATURES.md`: added a "Scan History" entry (Status: Planned) scoping the three endpoints + a frontend History page (list → detail view), explicitly noting there's no separate Dashboard/stats view in scope, and cross-referencing the retention/no-auth decisions since this page is what actually surfaces persisted scan data to a user.
+- `.claude/TASKS.md` / `docs/ROADMAP.md`: Phase 6 renamed from "Dashboard" to match `PRD.md`/`UI_UX.md`'s "History" naming; `TASKS.md`'s single vague "Dashboard" bullet split into the three endpoints + the frontend page.
+- Removed the stale auth/retention bullets from this file's Next Goal (see above — both already resolved, just not reflected here).
+
 ## Next Goal
 
-Phase 4 and Phase 5 are both complete, and `scan_type` is now a real enum — all accurately reflected in the docs. Other open items:
-- Whether auth/JWT is in scope for this local-first prototype.
-- Message-scan `input_text` (up to 20,000 chars of potentially personal email/SMS content) is now persisted indefinitely via the same `persist_scan` path used for URLs, with no retention policy — worth a conscious decision (truncate, hash, or explicit retention policy) before `GET /scan/{id}`/`GET /history` ship, especially since there's no auth yet.
-- EasyOCR's model weights are downloaded at runtime on first `/ocr/extract` call, not pre-baked into the Docker image (documented known limitation, not solved this session) — a container with no outbound network access will fail on its first OCR request.
-- `verdict` (`safe`/`low-risk`/`suspicious`/`dangerous`) is in the same position `scan_type` was in before this session — a free-text column with a small fixed set of real values, not yet formalized as an enum. Not tackled this session to keep scope to what was asked; same treatment would apply if it's worth doing.
+Phase 6 scope is now defined: implement `GET /scan/{id}`, `GET /history`, `DELETE /history/{id}`, and the frontend History page (see `docs/FEATURES.md`'s "Scan History" entry). Other open items:
+- EasyOCR's model weights are downloaded at runtime on first `/ocr/extract` call, not pre-baked into the Docker image (documented known limitation) — a container with no outbound network access will fail on its first OCR request.
+- `verdict` (`safe`/`low-risk`/`suspicious`/`dangerous`) is in the same position `scan_type` was in before the previous session — a free-text column with a small fixed set of real values, not yet formalized as an enum. Not tackled to keep scope tight; same treatment would apply if it's worth doing.
+- `docs/UI_UX.md`'s "Settings" page still has no backing feature (pre-existing gap, separate from History).
