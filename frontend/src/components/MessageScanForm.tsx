@@ -4,6 +4,7 @@ import { useState } from "react";
 import { extractText, scanEmail, scanSms, ScanError } from "@/lib/api";
 import { useScan } from "@/hooks/useScan";
 import { ScanResultView } from "./ScanResultView";
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/imageValidation";
 
 const COPY = {
   email: {
@@ -17,9 +18,6 @@ const COPY = {
     scanFn: scanSms,
   },
 } as const;
-
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 interface MessageScanFormProps {
   scanType: "email" | "sms";

@@ -33,3 +33,14 @@ class ScanResult(Base):
     severity: Mapped[str] = mapped_column(String(10))
 
     scan: Mapped["Scan"] = relationship(back_populates="results")
+
+
+class UploadedFile(Base):
+    __tablename__ = "uploaded_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("scans.id"))
+    filename: Mapped[str] = mapped_column(String(255))
+    path: Mapped[str] = mapped_column(Text)
+
+    scan: Mapped["Scan"] = relationship()

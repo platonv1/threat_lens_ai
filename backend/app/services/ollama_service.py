@@ -15,11 +15,14 @@ def _build_prompt(url: str, findings: list[Finding], score: int, verdict: str) -
     )
 
 
+_MESSAGE_LABELS = {"email": "email", "sms": "SMS message", "image": "screenshot"}
+
+
 def _build_message_prompt(scan_type: str, findings: list[Finding], score: int, verdict: str) -> str:
     findings_text = "\n".join(f"- [{f.severity}] {f.check}: {f.message}" for f in findings)
-    label = "email" if scan_type == "email" else "SMS message"
+    label = _MESSAGE_LABELS.get(scan_type, "message")
     return (
-        f"You are a security assistant. A scan of a pasted {label} produced a risk score of "
+        f"You are a security assistant. A scan of a {label} produced a risk score of "
         f"{score}/100 ({verdict}) based on these findings:\n{findings_text}\n\n"
         f"Explain in 2-3 plain-language sentences whether this {label} looks like a scam and why."
     )

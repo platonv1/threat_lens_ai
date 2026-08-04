@@ -120,13 +120,30 @@ Findings:
 - With the model warm, directly exercised `summarize_message` (email + SMS, suspicious and safe cases) and `summarize` (URL, safe case) against the real model — all three returned coherent, relevant plain-language explanations matching their findings/verdict, confirming the prompts in `_build_prompt`/`_build_message_prompt` produce sensible output from a real LLM, not just from the mocked tests.
 - This closes the "worth actually running Ollama locally to verify against a real model" item from last session's Next Goal. The "Llama 3.1 vs. Qwen" model-choice question itself remains open — only Llama 3.1 has been tried.
 
+### `scan_url`/`message_scan_service` architectural asymmetry — resolved (this session)
+
+Merged `worktree-backlog-fixes` (commit `1bf02e1`, developed in a separate session) into `main`: extracted `backend/app/services/url_scan_service.py::scan_url`, mirroring `message_scan_service`'s shape (orchestrate checks → score → summarize → persist). `backend/app/api/routes/scan.py`'s `POST /scan/url` handler is now a thin adapter like the email/SMS routes, instead of carrying the WHOIS/DNS/SSL orchestration inline. Pure extraction, no logic changes; `test_scan_route.py`'s patch targets updated to the new module. Reviewed the diff, discarded an unrelated uncommitted `package-lock.json` lockfile-drift change from that worktree (not part of the refactor), verified 51/51 backend tests green both pre- and post-merge, then removed the worktree and deleted the branch.
+
+### Phase 4: Screenshot Scanner + QR Detection (this session)
+
+Picked up mid-implementation: the previous session had already built the standalone Screenshot Scanner (`POST /scan/image`, `image_scan_service.py`, `image_upload.py`, `UploadedFile` model/migration, `ImageScanForm.tsx`) and the QR backend services (`qr_service.py::decode_qr` using OpenCV, `qr_scan_service.py::scan_qr` — decode → validate as URL → reuse `url_scan_service.scan_url` with `scan_type="qr"`), but left uncommitted with the QR route never wired up (`scan_qr` imported in `scan.py` but unused), no QR tests, and no QR frontend.
+
+**Bug found and fixed first:** `qr_service.py` used a bare `str | None` return annotation without `from __future__ import annotations` (unlike `ocr_service.py`, which already has this for the same reason) — this crashed *all* test collection under the local Python 3.9 venv (`TypeError: unsupported operand type(s) for |`), since PEP 604 union syntax is only evaluated eagerly-safe on 3.10+. One-line fix; all 57 pre-existing tests passed again immediately after.
+
+Completed this session:
+- Wired `POST /scan/qr` into `backend/app/api/routes/scan.py`: validates the upload via the shared `read_validated_image`, calls `scan_qr`, maps `ValueError` (no QR found / decoded content isn't a URL) to a 422.
+- Backend tests: 4 route-level tests in `test_scan_route.py`, plus new `test_qr_service.py` (3 tests, generating real QR-code PNGs in-test via `cv2.QRCodeEncoder` rather than mocking — same fixture-generation style as `test_ocr_service.py`) and `test_qr_scan_service.py` (3 tests). 67/67 backend tests passing.
+- Frontend: `scanQr()` in `api.ts` (reuses the existing `postImageScan` helper), new `QRScanForm.tsx` component (upload-only, no paste-text mode — mirrors `ImageScanForm.tsx`), wired into `ScanTabs.tsx` as a fifth "QR Code" tab. `QRScanForm.test.tsx` (4 tests) + a `ScanTabs.test.tsx` case. 46/46 frontend tests passing. `tsc --noEmit` and `npm run lint` both clean.
+- Docs: `docs/FEATURES.md` flipped Screenshot Scanner and QR Scanner from "Planned" to "Implemented"; `.claude/TASKS.md` Phase 4 items checked off; `docs/ROADMAP.md` Phase 4 renamed from "OCR" to "Screenshot Scanner + QR Detection". `docs/API.md`, `docs/TESTING.md`, `docs/DATABASE.md` already listed `POST /scan/qr`/QR Detection/`uploaded_files` ahead of implementation, so no changes needed there.
+
+**Manual browser verification** (Docker `db`+`backend` rebuilt fresh — confirmed the `uploaded_files` migration (`c4f2d6a9e1b3`) applies cleanly on top of the existing DB via the entrypoint's `alembic upgrade head` — `npm run dev` frontend, real Chrome via browser automation): generated a real QR-code PNG (`cv2.QRCodeEncoder`, upscaled + quiet-zone border so the detector can read it) encoding `https://example.com`, uploaded it on the QR Code tab — decoded correctly and ran the real WHOIS/DNS/SSL pipeline, rendering score 0/`Safe` with real findings (domain age, resolvable DNS, valid SSL cert). A blank image correctly surfaced "No QR code detected in this image." inline. Switching back to the URL tab showed a clean, empty form with no leftover state (regression check). Ollama wasn't running this session, so `ai_summary` showed the fallback string — expected, not a bug.
+
 ## Next Goal
 
-Phase 4's remaining scope — standalone Screenshot Scanner (`POST /scan/image`, auto-scan with persisted image, no review step) and QR Detection — is still unbuilt; this session only pulled forward the OCR-engine slice into the Message Scanner. Other open items:
-- `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted last session, not yet reconciled).
-- LLM model choice (Llama 3.1 vs. Qwen) — Llama 3.1 now verified working end-to-end against a real model (see above); Qwen not yet tried, so the choice itself is still open.
+Phase 4 is now complete (Screenshot Scanner + QR Detection). Other open items:
+- `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted previously, not yet reconciled).
+- LLM model choice (Llama 3.1 vs. Qwen) — Llama 3.1 verified working end-to-end against a real model; Qwen not yet tried, so the choice itself is still open.
 - Whether auth/JWT is in scope for this local-first prototype.
-- `scans.scan_type` enum not defined (still a free-text column; now has three real values in practice — `url`, `email`, `sms` — worth formalizing before more scan types are added).
-- `scan_url`'s business logic still lives inline in the route (`backend/app/api/routes/scan.py`), while `scan_email`/`scan_sms` delegate to `message_scan_service` — an architectural asymmetry worth resolving (extracting a matching `url_scan_service`) before Phase 4 adds another scan type.
+- `scans.scan_type` enum not defined (still a free-text column; now has five real values in practice — `url`, `email`, `sms`, `image`, `qr` — worth formalizing now that Phase 4 is done).
 - Message-scan `input_text` (up to 20,000 chars of potentially personal email/SMS content) is now persisted indefinitely via the same `persist_scan` path used for URLs, with no retention policy — worth a conscious decision (truncate, hash, or explicit retention policy) before `GET /scan/{id}`/`GET /history` ship, especially since there's no auth yet.
 - EasyOCR's model weights are downloaded at runtime on first `/ocr/extract` call, not pre-baked into the Docker image (documented known limitation, not solved this session) — a container with no outbound network access will fail on its first OCR request.

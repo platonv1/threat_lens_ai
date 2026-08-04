@@ -11,10 +11,10 @@ Analyze URLs using WHOIS, DNS, SSL, and a local LLM.
 
 ## Screenshot Scanner
 
-Status: Planned
+Status: Implemented
 
 Description:
-Extract text with OCR and analyze for phishing indicators.
+Upload a screenshot and it's scanned automatically — text is extracted with OCR and analyzed for phishing indicators, with no review step (unlike the Email/SMS scanners' image-upload mode).
 
 ---
 
@@ -38,10 +38,10 @@ Analyze pasted SMS text for common scam patterns (smishing links, urgency langua
 
 ## QR Scanner
 
-Status: Planned
+Status: Implemented
 
 Description:
-Decode QR codes and inspect the destination URL.
+Decode a QR code from an uploaded image and run the decoded URL through the same WHOIS/DNS/SSL/AI-summary pipeline as the URL Scanner.
 
 ---
 

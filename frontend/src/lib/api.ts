@@ -66,3 +66,28 @@ export async function extractText(image: File): Promise<string> {
   const data = (await response.json()) as { text: string };
   return data.text;
 }
+
+async function postImageScan(path: string, image: File): Promise<ScanResponse> {
+  const formData = new FormData();
+  formData.append("image", image);
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
+  }
+
+  return response.json() as Promise<ScanResponse>;
+}
+
+export async function scanImage(image: File): Promise<ScanResponse> {
+  return postImageScan("/scan/image", image);
+}
+
+export async function scanQr(image: File): Promise<ScanResponse> {
+  return postImageScan("/scan/qr", image);
+}

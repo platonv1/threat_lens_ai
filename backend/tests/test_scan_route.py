@@ -106,6 +106,112 @@ def test_scan_sms_persists_and_returns_findings():
     assert body["findings"] == []
 
 
+def test_scan_image_persists_and_returns_findings(tmp_path):
+    with (
+        patch(
+            "app.services.image_scan_service.extract_text",
+            return_value="URGENT: verify your password immediately.",
+        ),
+        patch(
+            "app.services.image_scan_service.summarize_message",
+            new=AsyncMock(return_value="This looks like a scam."),
+        ),
+        patch(
+            "app.services.image_scan_service._save_upload",
+            return_value=str(tmp_path / "fake.png"),
+        ),
+    ):
+        response = client.post(
+            "/scan/image",
+            files={"image": ("screenshot.png", b"fake-png-bytes", "image/png")},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["scan_type"] == "image"
+    assert body["ai_summary"] == "This looks like a scam."
+    assert {f["check"] for f in body["findings"]} == {"urgency_language", "credential_request"}
+
+
+def test_scan_image_rejects_unsupported_content_type():
+    response = client.post(
+        "/scan/image",
+        files={"image": ("note.txt", b"just some text", "text/plain")},
+    )
+    assert response.status_code == 422
+
+
+def test_scan_image_rejects_oversized_file():
+    oversized = b"a" * (8 * 1024 * 1024 + 1)
+    response = client.post(
+        "/scan/image",
+        files={"image": ("big.png", oversized, "image/png")},
+    )
+    assert response.status_code == 422
+
+
+def test_scan_qr_decodes_url_and_returns_findings():
+    with (
+        patch("app.services.qr_scan_service.decode_qr", return_value="example.com"),
+        patch(
+            "app.services.url_scan_service.check_whois",
+            return_value=Finding(check="whois", message="Domain registered long ago.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.check_dns",
+            return_value=Finding(check="dns", message="Resolves fine.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.check_ssl",
+            return_value=Finding(check="ssl", message="Valid HTTPS certificate.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.summarize",
+            new=AsyncMock(return_value="This URL looks safe."),
+        ),
+    ):
+        response = client.post(
+            "/scan/qr",
+            files={"image": ("qr.png", b"fake-png-bytes", "image/png")},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["input_text"] == "https://example.com"
+    assert body["scan_type"] == "qr"
+    assert body["ai_summary"] == "This URL looks safe."
+
+
+def test_scan_qr_rejects_image_with_no_qr_code():
+    with patch("app.services.qr_scan_service.decode_qr", return_value=None):
+        response = client.post(
+            "/scan/qr",
+            files={"image": ("qr.png", b"fake-png-bytes", "image/png")},
+        )
+
+    assert response.status_code == 422
+    assert "No QR code detected" in response.json()["detail"]
+
+
+def test_scan_qr_rejects_non_url_payload():
+    with patch("app.services.qr_scan_service.decode_qr", return_value="   "):
+        response = client.post(
+            "/scan/qr",
+            files={"image": ("qr.png", b"fake-png-bytes", "image/png")},
+        )
+
+    assert response.status_code == 422
+    assert "does not contain a valid URL" in response.json()["detail"]
+
+
+def test_scan_qr_rejects_unsupported_content_type():
+    response = client.post(
+        "/scan/qr",
+        files={"image": ("note.txt", b"just some text", "text/plain")},
+    )
+    assert response.status_code == 422
+
+
 def test_scan_email_rejects_empty_text():
     response = client.post("/scan/email", json={"text": "   "})
     assert response.status_code == 422

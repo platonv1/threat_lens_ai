@@ -12,7 +12,7 @@ from app.services.ssl_service import check_ssl
 from app.services.whois_service import check_whois
 
 
-async def scan_url(url: str, db: Session) -> ScanResponse:
+async def scan_url(url: str, db: Session, scan_type: str = "url") -> ScanResponse:
     hostname = urlparse(url).hostname
 
     findings: list[Finding] = [
@@ -23,4 +23,4 @@ async def scan_url(url: str, db: Session) -> ScanResponse:
     risk_score, verdict = score_findings(findings)
     ai_summary = await summarize(url, findings, risk_score, verdict)
 
-    return persist_scan(db, "url", url, findings, risk_score, verdict, ai_summary)
+    return persist_scan(db, scan_type, url, findings, risk_score, verdict, ai_summary)

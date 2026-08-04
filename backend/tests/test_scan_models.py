@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.session import Base
-from app.models.scan import Scan, ScanResult
+from app.models.scan import Scan, ScanResult, UploadedFile
 
 
 def _make_session():
@@ -38,3 +38,28 @@ def test_scan_result_round_trip():
     assert fetched.results[0].check == "dns"
     assert fetched.results[0].severity == "info"
     assert isinstance(fetched.created_at, datetime)
+
+
+def test_uploaded_file_round_trip():
+    session = _make_session()
+    scan = Scan(
+        scan_type="image",
+        input_text="URGENT verify your password",
+        risk_score=55,
+        verdict="suspicious",
+        ai_summary="Looks like a scam.",
+    )
+    session.add(scan)
+    session.commit()
+    session.refresh(scan)
+
+    uploaded = UploadedFile(scan_id=scan.id, filename="screenshot.png", path="/uploads/abc123.png")
+    session.add(uploaded)
+    session.commit()
+    session.refresh(uploaded)
+
+    fetched = session.get(UploadedFile, uploaded.id)
+    assert fetched is not None
+    assert fetched.scan_id == scan.id
+    assert fetched.filename == "screenshot.png"
+    assert fetched.path == "/uploads/abc123.png"

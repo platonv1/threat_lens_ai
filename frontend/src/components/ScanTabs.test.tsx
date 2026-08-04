@@ -27,4 +27,24 @@ describe("ScanTabs", () => {
 
     expect(screen.getByPlaceholderText("Paste the SMS text here…")).toBeInTheDocument();
   });
+
+  it("switches to the Screenshot form when the Screenshot tab is clicked", async () => {
+    const user = userEvent.setup();
+    render(<ScanTabs />);
+
+    await user.click(screen.getByRole("tab", { name: "Screenshot" }));
+
+    expect(screen.getByLabelText(/upload a screenshot to scan/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("example.com")).not.toBeInTheDocument();
+  });
+
+  it("switches to the QR Code form when the QR Code tab is clicked", async () => {
+    const user = userEvent.setup();
+    render(<ScanTabs />);
+
+    await user.click(screen.getByRole("tab", { name: "QR Code" }));
+
+    expect(screen.getByLabelText(/upload an image containing a qr code/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("example.com")).not.toBeInTheDocument();
+  });
 });

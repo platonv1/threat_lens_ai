@@ -24,8 +24,8 @@
 
 ## Phase 4
 
-- [ ] Screenshot OCR
-- [ ] QR Detection
+- [x] Screenshot OCR (POST /scan/image)
+- [x] QR Detection (POST /scan/qr)
 
 ## Phase 5
 

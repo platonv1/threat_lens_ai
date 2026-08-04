@@ -14,7 +14,7 @@ Message Scanner (Email + SMS)
 
 ## Phase 4
 
-OCR
+Screenshot Scanner + QR Detection
 
 ## Phase 5
 

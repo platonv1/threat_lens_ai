@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.scan import MessageScanRequest, ScanResponse, URLScanRequest
+from app.services.image_scan_service import scan_image
+from app.services.image_upload import read_validated_image
 from app.services.message_scan_service import scan_message
+from app.services.qr_scan_service import scan_qr
 from app.services.url_scan_service import scan_url as run_url_scan
 
 router = APIRouter(prefix="/scan", tags=["scan"])
@@ -12,6 +15,25 @@ router = APIRouter(prefix="/scan", tags=["scan"])
 @router.post("/url", response_model=ScanResponse)
 async def scan_url(payload: URLScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
     return await run_url_scan(payload.url, db)
+
+
+@router.post("/image", response_model=ScanResponse)
+async def scan_screenshot(
+    image: UploadFile = File(...), db: Session = Depends(get_db)
+) -> ScanResponse:
+    image_bytes = await read_validated_image(image)
+    return await scan_image(image_bytes, image.filename or "upload", db)
+
+
+@router.post("/qr", response_model=ScanResponse)
+async def scan_qr_code(
+    image: UploadFile = File(...), db: Session = Depends(get_db)
+) -> ScanResponse:
+    image_bytes = await read_validated_image(image)
+    try:
+        return await scan_qr(image_bytes, db)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/email", response_model=ScanResponse)

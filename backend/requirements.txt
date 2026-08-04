@@ -10,4 +10,5 @@ python-whois
 dnspython
 httpx
 easyocr
+opencv-python-headless
 python-multipart

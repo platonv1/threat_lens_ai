@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { ScanForm } from "./ScanForm";
 import { MessageScanForm } from "./MessageScanForm";
+import { ImageScanForm } from "./ImageScanForm";
+import { QRScanForm } from "./QRScanForm";
 
 const TABS = [
   { id: "url", label: "URL" },
   { id: "email", label: "Email" },
   { id: "sms", label: "SMS" },
+  { id: "image", label: "Screenshot" },
+  { id: "qr", label: "QR Code" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -39,6 +43,8 @@ export function ScanTabs() {
         {activeTab === "url" && <ScanForm />}
         {activeTab === "email" && <MessageScanForm scanType="email" />}
         {activeTab === "sms" && <MessageScanForm scanType="sms" />}
+        {activeTab === "image" && <ImageScanForm />}
+        {activeTab === "qr" && <QRScanForm />}
       </div>
     </div>
   );
