@@ -29,8 +29,8 @@
 
 ## Phase 5
 
-- [ ] Ollama Integration
-- [ ] AI Risk Analysis
+- [x] Ollama Integration (verified end-to-end against a real Llama 3.1 model)
+- [x] AI Risk Analysis (human-readable explanation via Ollama; risk score/verdict remain rule-based by design — see FEATURES.md)
 
 ## Phase 6
 

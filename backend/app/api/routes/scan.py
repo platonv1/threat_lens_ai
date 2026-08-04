@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.scan import ScanType
 from app.schemas.scan import MessageScanRequest, ScanResponse, URLScanRequest
 from app.services.image_scan_service import scan_image
 from app.services.image_upload import read_validated_image
@@ -38,9 +39,9 @@ async def scan_qr_code(
 
 @router.post("/email", response_model=ScanResponse)
 async def scan_email(payload: MessageScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
-    return await scan_message("email", payload.text, db)
+    return await scan_message(ScanType.EMAIL, payload.text, db)
 
 
 @router.post("/sms", response_model=ScanResponse)
 async def scan_sms(payload: MessageScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
-    return await scan_message("sms", payload.text, db)
+    return await scan_message(ScanType.SMS, payload.text, db)

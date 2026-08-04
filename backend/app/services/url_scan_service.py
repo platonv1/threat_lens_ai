@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
+from app.models.scan import ScanType
 from app.schemas.scan import Finding, ScanResponse
 from app.services.dns_service import check_dns
 from app.services.ollama_service import summarize
@@ -12,7 +13,7 @@ from app.services.ssl_service import check_ssl
 from app.services.whois_service import check_whois
 
 
-async def scan_url(url: str, db: Session, scan_type: str = "url") -> ScanResponse:
+async def scan_url(url: str, db: Session, scan_type: ScanType = ScanType.URL) -> ScanResponse:
     hostname = urlparse(url).hostname
 
     findings: list[Finding] = [

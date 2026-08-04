@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 
-from app.models.scan import Scan, ScanResult
+from app.models.scan import Scan, ScanResult, ScanType
 from app.schemas.scan import Finding, ScanResponse
 
 
 def persist_scan(
     db: Session,
-    scan_type: str,
+    scan_type: ScanType,
     input_text: str,
     findings: list[Finding],
     risk_score: int,

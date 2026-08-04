@@ -5,7 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models.scan import UploadedFile
+from app.models.scan import ScanType, UploadedFile
 from app.schemas.scan import ScanResponse
 from app.services.ocr_service import extract_text
 from app.services.ollama_service import summarize_message
@@ -31,8 +31,8 @@ async def scan_image(image_bytes: bytes, filename: str, db: Session) -> ScanResp
 
     findings = detect_scam_patterns(text)
     risk_score, verdict = score_findings(findings)
-    ai_summary = await summarize_message("image", findings, risk_score, verdict)
-    response = persist_scan(db, "image", text, findings, risk_score, verdict, ai_summary)
+    ai_summary = await summarize_message(ScanType.IMAGE, findings, risk_score, verdict)
+    response = persist_scan(db, ScanType.IMAGE, text, findings, risk_score, verdict, ai_summary)
 
     stored_path = await run_in_threadpool(_save_upload, image_bytes, filename)
     db.add(UploadedFile(scan_id=response.id, filename=filename, path=stored_path))

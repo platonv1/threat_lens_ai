@@ -1,17 +1,34 @@
+import enum
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import Enum, ForeignKey, Integer, String, Text
 from sqlalchemy import DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
 
+class ScanType(str, enum.Enum):
+    URL = "url"
+    EMAIL = "email"
+    SMS = "sms"
+    IMAGE = "image"
+    QR = "qr"
+
+
+_scan_type_column = Enum(
+    ScanType,
+    name="scan_type_enum",
+    values_callable=lambda enum_cls: [member.value for member in enum_cls],
+    validate_strings=True,
+)
+
+
 class Scan(Base):
     __tablename__ = "scans"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    scan_type: Mapped[str] = mapped_column(String(20))
+    scan_type: Mapped[ScanType] = mapped_column(_scan_type_column)
     input_text: Mapped[str] = mapped_column(Text)
     risk_score: Mapped[int] = mapped_column(Integer)
     verdict: Mapped[str] = mapped_column(String(20))

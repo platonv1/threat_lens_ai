@@ -29,7 +29,7 @@ URL Scanner backend is implemented and merged to `main`; frontend still pending.
 ## Known Issues
 
 - Minor ambiguities to resolve before their respective features are designed: OCR engine choice (EasyOCR vs. Tesseract — primary/fallback unclear), LLM model choice (Llama 3.1 vs. Qwen), whether auth/JWT is in scope for this local-first prototype, `scans.scan_type` enum not defined, `UI_UX.md`'s Settings page has no backing feature.
-- Pre-existing, not fixed this session: `ROADMAP.md` and `.claude/TASKS.md` disagree on phase count — `ROADMAP.md` splits Dashboard (Phase 6) and Reporting (Phase 7) into separate phases, `TASKS.md` combines them into one Phase 6. Left as-is to avoid scope creep while resolving the SMS/Email gap below; worth reconciling in its own pass.
+- ~~`ROADMAP.md` and `.claude/TASKS.md` disagree on phase count~~ — resolved, see "Phase 5/docs reconciliation" below.
 
 ### URL Scanner frontend (this session)
 
@@ -138,12 +138,32 @@ Completed this session:
 
 **Manual browser verification** (Docker `db`+`backend` rebuilt fresh — confirmed the `uploaded_files` migration (`c4f2d6a9e1b3`) applies cleanly on top of the existing DB via the entrypoint's `alembic upgrade head` — `npm run dev` frontend, real Chrome via browser automation): generated a real QR-code PNG (`cv2.QRCodeEncoder`, upscaled + quiet-zone border so the detector can read it) encoding `https://example.com`, uploaded it on the QR Code tab — decoded correctly and ran the real WHOIS/DNS/SSL pipeline, rendering score 0/`Safe` with real findings (domain age, resolvable DNS, valid SSL cert). A blank image correctly surfaced "No QR code detected in this image." inline. Switching back to the URL tab showed a clean, empty form with no leftover state (regression check). Ollama wasn't running this session, so `ai_summary` showed the fallback string — expected, not a bug.
 
+### Phase 5/docs reconciliation (this session)
+
+`.claude/TASKS.md` still listed Phase 5 ("Ollama Integration", "AI Risk Analysis") as unchecked, even though Ollama has been wired into every scan type (URL/email/SMS/image/QR) and verified end-to-end against a real Llama 3.1 model since earlier sessions. Also re-checked the previously-flagged `TASKS.md`/`ROADMAP.md` phase-count mismatch and found both already agree (7 phases, same titles) — that note was stale, presumably fixed in an earlier docs pass without updating this log.
+
+Surfaced one real scope question before just checking the box: `docs/FEATURES.md`'s "AI Risk Explanation" entry described generating "a human-readable explanation **and risk score**" via Ollama — but the risk score/verdict is and always has been purely rule-based (`risk_scorer.py`, severity-weighted sum), never LLM-computed. Asked the user how to reconcile this; decision: keep scoring rule-based by design (deterministic, explainable, no model in the loop needed) and fix the docs to reflect that, rather than building AI-driven scoring.
+
+Changes:
+- `docs/FEATURES.md`: "AI Risk Explanation" flipped to Implemented, description rewritten to be explicit that only the explanation is AI-generated — scoring is deliberately rule-based.
+- `.claude/TASKS.md`: Phase 5 items checked off with a note pointing at the scoring-stays-rule-based decision.
+- Removed the stale phase-count-mismatch bullet from this file's Known Issues (see below).
+
+### `scans.scan_type` formalized as a real enum (this session)
+
+Was a free-text `String(20)` column with no DB-level validation, despite only ever holding five real values (`url`, `email`, `sms`, `image`, `qr`) in practice.
+
+- `backend/app/models/scan.py`: added `ScanType(str, enum.Enum)` and mapped `Scan.scan_type` to a SQLAlchemy `Enum(ScanType, name="scan_type_enum", values_callable=..., validate_strings=True)`. `values_callable` makes SQLAlchemy store the enum's lowercase `.value` (`"url"`) rather than its default of the member `.name` (`"URL"`), so existing rows/API contracts are unaffected. `validate_strings=True` means invalid values raise a Python-level `StatementError` on flush even on backends (like the SQLite test DB) that don't get a native DB-level CHECK — confirmed via `test_scan_type_rejects_invalid_value`.
+- `backend/app/schemas/scan.py`: `ScanResponse.scan_type` changed from `str` to `ScanType` — since it's a `str` subclass, JSON responses are unaffected (`"scan_type": "url"`, not `"ScanType.URL"`), but the OpenAPI schema now documents the closed set of allowed values (verified via `/openapi.json`).
+- All service call sites (`url_scan_service`, `message_scan_service`, `image_scan_service`, `qr_scan_service`, `scan_persistence`, `ollama_service`, the `/scan/*` routes) updated to pass `ScanType.X` members instead of raw string literals, for compile-time typo protection.
+- New migration `f1a7c3e9b2d4` creates the Postgres `scan_type_enum` type and alters `scans.scan_type` from `VARCHAR(20)` to it via `USING scan_type::scan_type_enum`. Verified against a real Postgres container: seeded rows with all five real scan types, ran the upgrade (column type flips, `pg_typeof` confirms `scan_type_enum`, data preserved), confirmed the native constraint rejects invalid values (`INSERT ... VALUES ('bogus', ...)` → `ERROR: invalid input value for enum`), then verified the downgrade round-trip (back to `VARCHAR(20)`, data still intact) and re-upgraded to head. Also rebuilt and ran the real `backend` container against the migrated DB — entrypoint's `alembic upgrade head` was a no-op (already at head, confirming idempotency), and a live `POST /scan/sms` call persisted and returned correctly.
+- `docs/DATABASE.md` updated to note `scan_type` is now a Postgres enum with its five values.
+- Backend tests: 69/69 passing (2 new: accepts an enum member or matching string, rejects an invalid one).
+
 ## Next Goal
 
-Phase 4 is now complete (Screenshot Scanner + QR Detection). Other open items:
-- `TASKS.md`/`ROADMAP.md` phase-count mismatch (noted previously, not yet reconciled).
-- LLM model choice (Llama 3.1 vs. Qwen) — Llama 3.1 verified working end-to-end against a real model; Qwen not yet tried, so the choice itself is still open.
+Phase 4 and Phase 5 are both complete, and `scan_type` is now a real enum — all accurately reflected in the docs. Other open items:
 - Whether auth/JWT is in scope for this local-first prototype.
-- `scans.scan_type` enum not defined (still a free-text column; now has five real values in practice — `url`, `email`, `sms`, `image`, `qr` — worth formalizing now that Phase 4 is done).
 - Message-scan `input_text` (up to 20,000 chars of potentially personal email/SMS content) is now persisted indefinitely via the same `persist_scan` path used for URLs, with no retention policy — worth a conscious decision (truncate, hash, or explicit retention policy) before `GET /scan/{id}`/`GET /history` ship, especially since there's no auth yet.
 - EasyOCR's model weights are downloaded at runtime on first `/ocr/extract` call, not pre-baked into the Docker image (documented known limitation, not solved this session) — a container with no outbound network access will fail on its first OCR request.
+- `verdict` (`safe`/`low-risk`/`suspicious`/`dangerous`) is in the same position `scan_type` was in before this session — a free-text column with a small fixed set of real values, not yet formalized as an enum. Not tackled this session to keep scope to what was asked; same treatment would apply if it's worth doing.

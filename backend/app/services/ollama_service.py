@@ -1,6 +1,7 @@
 import httpx
 
 from app.core.config import get_settings
+from app.models.scan import ScanType
 from app.schemas.scan import Finding
 
 _FALLBACK_SUMMARY = "AI summary unavailable."
@@ -15,10 +16,12 @@ def _build_prompt(url: str, findings: list[Finding], score: int, verdict: str) -
     )
 
 
-_MESSAGE_LABELS = {"email": "email", "sms": "SMS message", "image": "screenshot"}
+_MESSAGE_LABELS = {ScanType.EMAIL: "email", ScanType.SMS: "SMS message", ScanType.IMAGE: "screenshot"}
 
 
-def _build_message_prompt(scan_type: str, findings: list[Finding], score: int, verdict: str) -> str:
+def _build_message_prompt(
+    scan_type: ScanType, findings: list[Finding], score: int, verdict: str
+) -> str:
     findings_text = "\n".join(f"- [{f.severity}] {f.check}: {f.message}" for f in findings)
     label = _MESSAGE_LABELS.get(scan_type, "message")
     return (
@@ -47,5 +50,7 @@ async def summarize(url: str, findings: list[Finding], score: int, verdict: str)
     return await _generate(_build_prompt(url, findings, score, verdict))
 
 
-async def summarize_message(scan_type: str, findings: list[Finding], score: int, verdict: str) -> str:
+async def summarize_message(
+    scan_type: ScanType, findings: list[Finding], score: int, verdict: str
+) -> str:
     return await _generate(_build_message_prompt(scan_type, findings, score, verdict))

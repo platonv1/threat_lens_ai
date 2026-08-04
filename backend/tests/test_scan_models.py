@@ -1,11 +1,13 @@
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.session import Base
-from app.models.scan import Scan, ScanResult, UploadedFile
+from app.models.scan import Scan, ScanResult, ScanType, UploadedFile
 
 
 def _make_session():
@@ -63,3 +65,36 @@ def test_uploaded_file_round_trip():
     assert fetched.scan_id == scan.id
     assert fetched.filename == "screenshot.png"
     assert fetched.path == "/uploads/abc123.png"
+
+
+def test_scan_type_accepts_enum_member_or_matching_string():
+    session = _make_session()
+    scan = Scan(
+        scan_type=ScanType.QR,
+        input_text="https://example.com",
+        risk_score=0,
+        verdict="safe",
+        ai_summary="Looks fine.",
+    )
+    session.add(scan)
+    session.commit()
+    session.refresh(scan)
+
+    assert scan.scan_type == ScanType.QR
+    assert scan.scan_type == "qr"
+
+
+def test_scan_type_rejects_invalid_value():
+    session = _make_session()
+    session.add(
+        Scan(
+            scan_type="bogus",
+            input_text="x",
+            risk_score=0,
+            verdict="safe",
+            ai_summary="x",
+        )
+    )
+
+    with pytest.raises(StatementError):
+        session.commit()

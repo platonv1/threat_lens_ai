@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from app.models.scan import ScanType
+
 
 class Finding(BaseModel):
     check: str
@@ -46,7 +48,7 @@ class ScanResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    scan_type: str
+    scan_type: ScanType
     input_text: str
     risk_score: int
     verdict: str

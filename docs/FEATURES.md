@@ -47,7 +47,7 @@ Decode a QR code from an uploaded image and run the decoded URL through the same
 
 ## AI Risk Explanation
 
-Status: Planned
+Status: Implemented
 
 Description:
-Generate a human-readable explanation and risk score using Ollama.
+Generate a human-readable explanation of a scan's findings using a local Ollama model (verified end-to-end against Llama 3.1). The risk score and verdict themselves are deterministic and rule-based (`risk_scorer.py`, weighted by finding severity) — the LLM only explains the result in plain language, it doesn't compute it. This is a deliberate choice: keeps scoring fast, explainable, and reproducible without a model in the loop, while still giving the AI-generated context.

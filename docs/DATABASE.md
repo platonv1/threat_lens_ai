@@ -3,7 +3,7 @@
 ## scans
 
 - id
-- scan_type
+- scan_type — Postgres enum (`scan_type_enum`): `url`, `email`, `sms`, `image`, `qr`
 - input_text
 - risk_score
 - verdict
