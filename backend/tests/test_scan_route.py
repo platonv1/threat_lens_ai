@@ -39,19 +39,19 @@ client = TestClient(app)
 def test_scan_url_persists_and_returns_findings():
     with (
         patch(
-            "app.api.routes.scan.check_whois",
+            "app.services.url_scan_service.check_whois",
             return_value=Finding(check="whois", message="Domain registered long ago.", severity="info"),
         ),
         patch(
-            "app.api.routes.scan.check_dns",
+            "app.services.url_scan_service.check_dns",
             return_value=Finding(check="dns", message="Resolves fine.", severity="info"),
         ),
         patch(
-            "app.api.routes.scan.check_ssl",
+            "app.services.url_scan_service.check_ssl",
             return_value=Finding(check="ssl", message="Valid HTTPS certificate.", severity="info"),
         ),
         patch(
-            "app.api.routes.scan.summarize",
+            "app.services.url_scan_service.summarize",
             new=AsyncMock(return_value="This URL looks safe."),
         ),
     ):
