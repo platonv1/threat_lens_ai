@@ -1,4 +1,4 @@
-import type { ScanResponse } from "@/types/scan";
+import type { ScanResponse, ScanSummary } from "@/types/scan";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -90,4 +90,32 @@ export async function scanImage(image: File): Promise<ScanResponse> {
 
 export async function scanQr(image: File): Promise<ScanResponse> {
   return postImageScan("/scan/qr", image);
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`);
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function getHistory(): Promise<ScanSummary[]> {
+  return getJson<ScanSummary[]>("/history");
+}
+
+export async function getScan(id: number): Promise<ScanResponse> {
+  return getJson<ScanResponse>(`/scan/${id}`);
+}
+
+export async function deleteScan(id: number): Promise<void> {
+  const response = await fetch(`${API_URL}/history/${id}`, { method: "DELETE" });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
+  }
 }

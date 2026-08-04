@@ -16,3 +16,12 @@ export interface ScanResponse {
   findings: Finding[];
   created_at: string;
 }
+
+export interface ScanSummary {
+  id: number;
+  scan_type: string;
+  input_text: string;
+  risk_score: number;
+  verdict: string;
+  created_at: string;
+}

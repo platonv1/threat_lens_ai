@@ -68,6 +68,31 @@ def test_scan_url_persists_and_returns_findings():
     assert body["id"] is not None
 
 
+def test_get_scan_returns_persisted_scan_with_findings():
+    with patch(
+        "app.services.message_scan_service.summarize_message",
+        new=AsyncMock(return_value="This looks like a scam."),
+    ):
+        created = client.post(
+            "/scan/email",
+            json={"text": "URGENT: verify your password immediately or your account will be suspended."},
+        ).json()
+
+    response = client.get(f"/scan/{created['id']}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == created["id"]
+    assert body["scan_type"] == "email"
+    assert body["ai_summary"] == "This looks like a scam."
+    assert {f["check"] for f in body["findings"]} == {"urgency_language", "credential_request"}
+
+
+def test_get_scan_returns_404_for_unknown_id():
+    response = client.get("/scan/999999")
+    assert response.status_code == 404
+
+
 def test_scan_email_persists_and_returns_findings():
     with patch(
         "app.services.message_scan_service.summarize_message",

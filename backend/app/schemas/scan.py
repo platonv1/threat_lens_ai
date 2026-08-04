@@ -55,3 +55,14 @@ class ScanResponse(BaseModel):
     ai_summary: str
     findings: list[Finding]
     created_at: datetime
+
+
+class ScanSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    scan_type: ScanType
+    input_text: str
+    risk_score: int
+    verdict: str
+    created_at: datetime

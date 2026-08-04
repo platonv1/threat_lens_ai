@@ -38,6 +38,9 @@ class Scan(Base):
     results: Mapped[list["ScanResult"]] = relationship(
         back_populates="scan", cascade="all, delete-orphan"
     )
+    uploaded_files: Mapped[list["UploadedFile"]] = relationship(
+        back_populates="scan", cascade="all, delete-orphan"
+    )
 
 
 class ScanResult(Base):
@@ -60,4 +63,4 @@ class UploadedFile(Base):
     filename: Mapped[str] = mapped_column(String(255))
     path: Mapped[str] = mapped_column(Text)
 
-    scan: Mapped["Scan"] = relationship()
+    scan: Mapped["Scan"] = relationship(back_populates="uploaded_files")

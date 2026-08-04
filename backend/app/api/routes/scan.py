@@ -8,6 +8,7 @@ from app.services.image_scan_service import scan_image
 from app.services.image_upload import read_validated_image
 from app.services.message_scan_service import scan_message
 from app.services.qr_scan_service import scan_qr
+from app.services.scan_persistence import get_scan_by_id
 from app.services.url_scan_service import scan_url as run_url_scan
 
 router = APIRouter(prefix="/scan", tags=["scan"])
@@ -16,6 +17,14 @@ router = APIRouter(prefix="/scan", tags=["scan"])
 @router.post("/url", response_model=ScanResponse)
 async def scan_url(payload: URLScanRequest, db: Session = Depends(get_db)) -> ScanResponse:
     return await run_url_scan(payload.url, db)
+
+
+@router.get("/{scan_id}", response_model=ScanResponse)
+async def get_scan(scan_id: int, db: Session = Depends(get_db)) -> ScanResponse:
+    scan = get_scan_by_id(db, scan_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found.")
+    return scan
 
 
 @router.post("/image", response_model=ScanResponse)

@@ -34,10 +34,10 @@
 
 ## Phase 6
 
-- [ ] GET /scan/{id}
-- [ ] GET /history
-- [ ] DELETE /history/{id}
-- [ ] Frontend History page (list, scan detail view, delete)
+- [x] GET /scan/{id}
+- [x] GET /history
+- [x] DELETE /history/{id}
+- [x] Frontend History page (list, scan detail view, delete)
 
 ## Phase 7
 

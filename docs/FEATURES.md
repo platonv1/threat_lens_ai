@@ -47,10 +47,10 @@ Decode a QR code from an uploaded image and run the decoded URL through the same
 
 ## Scan History
 
-Status: Planned
+Status: Implemented
 
 Description:
-Browse past scans and revisit their results. Backed by three endpoints already documented in `API.md` but not yet implemented: `GET /history` (paginated list of past scans — id, scan_type, verdict, risk_score, created_at), `GET /scan/{id}` (full detail for one scan — findings, ai_summary, everything `ScanResponse` returns from a fresh scan), and `DELETE /history/{id}` (remove a scan the user no longer wants persisted). Frontend is a "History" page (per `UI_UX.md`'s page list) with a list view linking into a detail view; no separate "Dashboard"/stats view is currently scoped — `ROADMAP.md`/`TASKS.md` previously called this phase "Dashboard" but that term doesn't appear in `PRD.md` or `UI_UX.md`, so it's been renamed to match. Governed by the data-retention decision in `DATABASE.md` (no TTL/redaction — this page will surface everything persisted, as-is, for this single-user local tool) and the no-auth decision in `SECURITY.md` (no per-user filtering needed).
+Browse past scans and revisit their results. Backed by three endpoints, all documented in `API.md` and implemented: `GET /history` (paginated list of past scans — id, scan_type, verdict, risk_score, input_text, created_at, ordered newest-first, `limit`/`offset` query params), `GET /scan/{id}` (full detail for one scan — findings, ai_summary, everything `ScanResponse` returns from a fresh scan; 404 if not found), and `DELETE /history/{id}` (removes a scan plus its findings and any associated uploaded screenshot, both the DB row and the on-disk file; 404 if not found). Frontend is a "History" page (`/history`, per `UI_UX.md`'s page list) with a list view (truncated preview, verdict, risk score, delete) linking into a detail view (`/history/{id}`, full findings + AI summary via the existing `ScanResultView`, delete-with-confirmation); no separate "Dashboard"/stats view is in scope — `ROADMAP.md`/`TASKS.md` previously called this phase "Dashboard" but that term doesn't appear in `PRD.md` or `UI_UX.md`, so it's been renamed to match. A minimal navbar (Scan / History) was added to `layout.tsx` since nothing linked to the new pages before this. Governed by the data-retention decision in `DATABASE.md` (no TTL/redaction — this page surfaces everything persisted, as-is, for this single-user local tool) and the no-auth decision in `SECURITY.md` (no per-user filtering needed).
 
 ---
 

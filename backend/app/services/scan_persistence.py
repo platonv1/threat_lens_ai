@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy.orm import Session
 
 from app.models.scan import Scan, ScanResult, ScanType
@@ -35,5 +37,24 @@ def persist_scan(
         verdict=scan.verdict,
         ai_summary=scan.ai_summary,
         findings=findings,
+        created_at=scan.created_at,
+    )
+
+
+def get_scan_by_id(db: Session, scan_id: int) -> ScanResponse | None:
+    scan = db.get(Scan, scan_id)
+    if scan is None:
+        return None
+
+    return ScanResponse(
+        id=scan.id,
+        scan_type=scan.scan_type,
+        input_text=scan.input_text,
+        risk_score=scan.risk_score,
+        verdict=scan.verdict,
+        ai_summary=scan.ai_summary,
+        findings=[
+            Finding(check=r.check, message=r.finding, severity=r.severity) for r in scan.results
+        ],
         created_at=scan.created_at,
     )
