@@ -199,7 +199,7 @@ Completes Phase 6. Both new pages are Client Components that fetch from the brow
 - Tests: `HistoryList.test.tsx` (5) and `ScanDetail.test.tsx` (4, mocking `next/navigation`'s `useRouter`) cover loading/empty/error states and both the confirm-then-delete and cancel-the-confirm paths. 55/55 frontend tests passing. `tsc --noEmit`, `npm run lint`, and `npm run build` (verifies the `/history` and `/history/[id]` routes register — one static, one dynamic) all clean.
 - **Manual verification** (Docker `db`+`backend`, `npm run dev` frontend, real Chrome): seeded scans via `curl`, confirmed the History list renders newest-first with correct truncation/verdict coloring, clicked into a detail view and confirmed findings/AI-summary/risk-meter render correctly, and confirmed `/history/999999` renders "Scan not found." from the backend's real 404. **Did not** complete a live click-through of the Delete button itself — clicking it opens a native `window.confirm()` dialog, which blocks the Chrome extension's ability to send further automation commands (a known limitation, not a bug in the app). The delete flow (both confirm-accepted and confirm-cancelled paths) is instead verified via the component tests above (mocked `confirm()`) plus the `DELETE /history/{id}` endpoint's own live Postgres verification from the previous session.
 
-### Phase 7: Report Export (this session, across two sub-sessions)
+### Phase 7: Report Export (this session, via subagent-driven development)
 
 Implemented the plan in `.superpowers/sdd/2026-08-05-scan-report-export/` (5 tasks: backend service, route, frontend client function, frontend button, docs + verification).
 
