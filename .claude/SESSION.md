@@ -222,7 +222,7 @@ Tests (from Tasks 1–4, confirmed still green this session): 83/83 backend (`py
 
 Docs: `docs/API.md` (added `GET /scan/{id}/report`), `docs/FEATURES.md` (new "Report Export" entry), `.claude/TASKS.md` (Phase 7 checked off), `docs/TECH_STACK.md` (new "Reporting" section, `reportlab`). No change needed to `docs/ROADMAP.md` — Phase 7 was already titled "Reporting."
 
-Two minor findings were deferred (not fixed) during this feature's task reviews, worth noting rather than losing track of: `report_service.py` doesn't defend against an on-disk upload file that exists but is corrupted/unreadable as image data (only checks `Path.is_file()`, not that `Image()` can actually decode it) — would currently raise instead of falling back to "Image unavailable."; and a couple of the new tests lean on light coverage of edge cases rather than being exhaustive. Neither blocks this feature; both are candidates for a future pass if reports become more heavily used.
+Five minor findings were deferred (not fixed) during this feature's task reviews, worth noting rather than losing track of: `report_service.py` doesn't defend against an on-disk upload file that exists but is corrupted/unreadable as image data (only checks `Path.is_file()`, not that `Image()` can actually decode it) — would currently raise instead of falling back to "Image unavailable."; and a few of the new tests lean on light coverage of edge cases rather than being exhaustive. None of these block this feature; each was a candidate for a future pass if reports become more heavily used.
 
 ## Next Goal
 

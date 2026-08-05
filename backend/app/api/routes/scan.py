@@ -28,7 +28,11 @@ async def get_scan(scan_id: int, db: Session = Depends(get_db)) -> ScanResponse:
     return scan
 
 
-@router.get("/{scan_id}/report")
+@router.get(
+    "/{scan_id}/report",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
 async def get_scan_report(scan_id: int, db: Session = Depends(get_db)) -> Response:
     scan = db.get(Scan, scan_id)
     if scan is None:

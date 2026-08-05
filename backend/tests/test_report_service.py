@@ -54,6 +54,10 @@ def test_generate_report_embeds_uploaded_image(tmp_path):
     pdf_bytes = generate_report(scan)
 
     assert pdf_bytes.startswith(b"%PDF-")
+    # A weak assertion here (just checking %PDF- magic bytes) would still
+    # pass even if image embedding were silently broken, so also confirm an
+    # image XObject is actually present in the raw PDF bytes.
+    assert b"/Subtype /Image" in pdf_bytes
 
 
 def test_generate_report_degrades_gracefully_when_image_file_missing(tmp_path):
@@ -61,6 +65,40 @@ def test_generate_report_degrades_gracefully_when_image_file_missing(tmp_path):
     scan = _make_scan(
         scan_type=ScanType.IMAGE,
         uploaded_files=[UploadedFile(filename="gone.png", path=str(missing_path))],
+    )
+
+    pdf_bytes = generate_report(scan)
+
+    assert pdf_bytes.startswith(b"%PDF-")
+    assert b"/Subtype /Image" not in pdf_bytes
+
+
+def test_generate_report_degrades_gracefully_when_image_file_is_corrupt(tmp_path):
+    corrupt_path = tmp_path / "corrupt.png"
+    corrupt_path.write_bytes(b"not-a-real-image")
+    scan = _make_scan(
+        scan_type=ScanType.IMAGE,
+        uploaded_files=[UploadedFile(filename="corrupt.png", path=str(corrupt_path))],
+    )
+
+    pdf_bytes = generate_report(scan)
+
+    assert pdf_bytes.startswith(b"%PDF-")
+    assert b"/Subtype /Image" not in pdf_bytes
+
+
+def test_generate_report_truncates_unbreakable_long_strings():
+    # reportlab's Table/Paragraph layout raises a LayoutError when a single
+    # unbroken "word" (no spaces to wrap at) is wrapped character-by-character
+    # to fit its column width, producing a cell too tall to fit on one page
+    # (e.g. a very long hostname in a DNS finding message). 20000 chars
+    # reliably reproduces this pre-fix (~10000 is the observed threshold in
+    # this findings table's column width); truncation must keep it well
+    # clear of that. Must not raise.
+    long_word = "a" * 20000
+    scan = _make_scan(
+        input_text=long_word,
+        results=[ScanResult(check="dns", finding=long_word, severity="high")],
     )
 
     pdf_bytes = generate_report(scan)
