@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ScanError, extractText, scanEmail, scanSms, scanUrl } from "./api";
+import { ScanError, downloadReport, extractText, scanEmail, scanSms, scanUrl } from "./api";
 
 const cases = [
   { name: "scanUrl", fn: scanUrl, path: "/scan/url", input: "example.com", body: { url: "example.com" } },
@@ -108,5 +108,43 @@ describe("extractText", () => {
     const file = new File(["x"], "bad.txt", { type: "text/plain" });
     await expect(extractText(file)).rejects.toThrow(/Unsupported image type/);
     await expect(extractText(file)).rejects.toBeInstanceOf(ScanError);
+  });
+});
+
+describe("downloadReport", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("fetches the PDF and triggers a browser download", async () => {
+    const blob = new Blob(["%PDF-1.4 fake"], { type: "application/pdf" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, blob: async () => blob }));
+
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-url");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    await downloadReport(1);
+
+    expect(createObjectURL).toHaveBeenCalledWith(blob);
+    expect(clickSpy).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+  });
+
+  it("throws a ScanError with the backend's message on a non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ detail: "Scan not found." }),
+      }),
+    );
+
+    await expect(downloadReport(999)).rejects.toThrow("Scan not found.");
+    await expect(downloadReport(999)).rejects.toBeInstanceOf(ScanError);
   });
 });
