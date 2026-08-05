@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.scan import ScanType
+from app.models.scan import Scan, ScanType
 from app.schemas.scan import MessageScanRequest, ScanResponse, URLScanRequest
 from app.services.image_scan_service import scan_image
 from app.services.image_upload import read_validated_image
 from app.services.message_scan_service import scan_message
 from app.services.qr_scan_service import scan_qr
+from app.services.report_service import generate_report
 from app.services.scan_persistence import get_scan_by_id
 from app.services.url_scan_service import scan_url as run_url_scan
 
@@ -25,6 +26,24 @@ async def get_scan(scan_id: int, db: Session = Depends(get_db)) -> ScanResponse:
     if scan is None:
         raise HTTPException(status_code=404, detail="Scan not found.")
     return scan
+
+
+@router.get(
+    "/{scan_id}/report",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+)
+async def get_scan_report(scan_id: int, db: Session = Depends(get_db)) -> Response:
+    scan = db.get(Scan, scan_id)
+    if scan is None:
+        raise HTTPException(status_code=404, detail="Scan not found.")
+
+    pdf_bytes = generate_report(scan)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="scan-{scan_id}-report.pdf"'},
+    )
 
 
 @router.post("/image", response_model=ScanResponse)

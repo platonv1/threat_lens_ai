@@ -119,3 +119,22 @@ export async function deleteScan(id: number): Promise<void> {
     throw new ScanError(extractErrorMessage(response.status, errorBody));
   }
 }
+
+export async function downloadReport(id: number): Promise<void> {
+  const response = await fetch(`${API_URL}/scan/${id}/report`);
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new ScanError(extractErrorMessage(response.status, errorBody));
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = `scan-${id}-report.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
+}

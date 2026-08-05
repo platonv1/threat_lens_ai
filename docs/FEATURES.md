@@ -60,3 +60,12 @@ Status: Implemented
 
 Description:
 Generate a human-readable explanation of a scan's findings using a local Ollama model (verified end-to-end against Llama 3.1). The risk score and verdict themselves are deterministic and rule-based (`risk_scorer.py`, weighted by finding severity) — the LLM only explains the result in plain language, it doesn't compute it. This is a deliberate choice: keeps scoring fast, explainable, and reproducible without a model in the loop, while still giving the AI-generated context.
+
+---
+
+## Report Export
+
+Status: Implemented
+
+Description:
+Download a single scan's results as a PDF from either the Results view (right after scanning) or the History detail view — both render the shared `ScanResultView` component, which has one "Download Report" button. The PDF includes the verdict, risk score, input (URL/text), findings table, and AI summary; for scans with an associated uploaded image (currently: Screenshot Scanner scans — QR scans decode and discard their image, so they have none to embed), the original image is embedded too. Generated on demand via `GET /scan/{id}/report`; never persisted to disk or the database.

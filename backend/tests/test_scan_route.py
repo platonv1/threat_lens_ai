@@ -268,3 +268,37 @@ def test_scan_message_never_sends_raw_text_to_ollama():
 
     assert "prompt" in captured
     assert canary not in captured["prompt"]
+
+
+def test_get_scan_report_returns_pdf_for_existing_scan():
+    with (
+        patch(
+            "app.services.url_scan_service.check_whois",
+            return_value=Finding(check="whois", message="Domain registered long ago.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.check_dns",
+            return_value=Finding(check="dns", message="Resolves fine.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.check_ssl",
+            return_value=Finding(check="ssl", message="Valid HTTPS certificate.", severity="info"),
+        ),
+        patch(
+            "app.services.url_scan_service.summarize",
+            new=AsyncMock(return_value="This URL looks safe."),
+        ),
+    ):
+        created = client.post("/scan/url", json={"url": "example.com"}).json()
+
+    response = client.get(f"/scan/{created['id']}/report")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content.startswith(b"%PDF-")
+    assert f'scan-{created["id"]}-report.pdf' in response.headers["content-disposition"]
+
+
+def test_get_scan_report_returns_404_for_unknown_id():
+    response = client.get("/scan/999999/report")
+    assert response.status_code == 404

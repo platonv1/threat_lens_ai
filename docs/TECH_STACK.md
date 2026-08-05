@@ -26,6 +26,10 @@ OCR
 
 - EasyOCR
 
+Reporting
+
+- reportlab (PDF generation)
+
 Deployment
 
 - Docker Compose

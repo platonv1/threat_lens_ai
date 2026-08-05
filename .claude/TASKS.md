@@ -41,4 +41,4 @@
 
 ## Phase 7
 
-- [ ] Reports
+- [x] Reports (single-scan PDF export via GET /scan/{id}/report; see FEATURES.md "Report Export")

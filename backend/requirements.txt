@@ -12,3 +12,4 @@ httpx
 easyocr
 opencv-python-headless
 python-multipart
+reportlab
