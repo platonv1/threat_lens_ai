@@ -14,6 +14,8 @@ POST /scan/qr
 
 GET /scan/{id}
 
+GET /scan/{id}/report
+
 GET /history
 
 DELETE /history/{id}
