@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-You are assisting in the development of **AI Internet Safety Center**, a local-first prototype that detects phishing websites, suspicious URLs, scam emails, SMS messages, QR codes, and screenshots.
+You are assisting in the development of **Cyber Scam Shield Assistant AI**, a local-first prototype that detects phishing websites, suspicious URLs, scam emails, SMS messages, QR codes, and screenshots.
 
 This project is intended for learning and demonstration purposes and must run entirely on a local machine.
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Internet Safety Center",
+  title: "Cyber Scam Shield Assistant AI",
   description: "Local-first phishing and scam detection prototype",
 };
 

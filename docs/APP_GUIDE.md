@@ -1,6 +1,6 @@
 # App Guide: Running and Testing Locally
 
-Step-by-step instructions for getting AI Internet Safety Center running on your machine and verifying it works.
+Step-by-step instructions for getting Cyber Scam Shield Assistant AI running on your machine and verifying it works.
 
 ## Prerequisites
 

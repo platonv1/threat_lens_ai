@@ -5,7 +5,7 @@ Date: 2026-07-31
 
 ## Purpose
 
-First real feature of the AI Internet Safety Center prototype (`ROADMAP.md` Phase 2). Given a URL, run WHOIS, DNS, and SSL checks, score the risk deterministically, and use a local Ollama model to produce a human-readable summary. Matches `FEATURES.md`: "Analyze URLs using WHOIS, DNS, SSL, and a local LLM."
+First real feature of the Cyber Scam Shield Assistant AI prototype (`ROADMAP.md` Phase 2). Given a URL, run WHOIS, DNS, and SSL checks, score the risk deterministically, and use a local Ollama model to produce a human-readable summary. Matches `FEATURES.md`: "Analyze URLs using WHOIS, DNS, SSL, and a local LLM."
 
 ## Scope
 

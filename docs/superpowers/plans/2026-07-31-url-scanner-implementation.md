@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship the first real feature of AI Internet Safety Center — submit a URL, run WHOIS/DNS/SSL checks plus a local Ollama summary, score the risk, persist the scan, and render the result on a results page.
+**Goal:** Ship the first real feature of Cyber Scam Shield Assistant AI — submit a URL, run WHOIS/DNS/SSL checks plus a local Ollama summary, score the risk, persist the scan, and render the result on a results page.
 
 **Architecture:** FastAPI route → `url_scan_service` orchestrator → three synchronous check services (`whois_service`, `dns_service`, `ssl_service`) run concurrently via `asyncio.to_thread` + `asyncio.gather` → pure `risk_scorer` function → async `ollama_service` call → persisted via SQLAlchemy (`Scan`, `ScanResult`) → JSON response. Next.js `/scan` form posts and redirects to `/results/[id]`, which always re-fetches by id via `GET /scan/{id}`.
 
@@ -622,7 +622,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    app_name: str = "AI Internet Safety Center"
+    app_name: str = "Cyber Scam Shield Assistant AI"
     environment: str = "development"
 
     database_url: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/threat_lens"
@@ -1731,7 +1731,7 @@ export default function Home() {
     <div className="flex flex-1 items-center justify-center bg-zinc-50 dark:bg-black">
       <main className="text-center">
         <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
-          AI Internet Safety Center
+          Cyber Scam Shield Assistant AI
         </h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
           Check a URL for phishing and scam indicators.

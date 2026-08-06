@@ -5,7 +5,7 @@ Date: 2026-08-01
 
 ## Purpose
 
-Third real feature of the AI Internet Safety Center prototype (`ROADMAP.md` Phase 3). Given pasted email or SMS text, run rule-based scam-pattern detection, score the risk deterministically, and use the local Ollama model to produce a human-readable summary. Matches `FEATURES.md`: "Analyze pasted email content for common scam patterns" (Email Scanner) and "Analyze pasted SMS text for common scam patterns... Shares its analysis logic with the Email Scanner" (SMS Scanner).
+Third real feature of the Cyber Scam Shield Assistant AI prototype (`ROADMAP.md` Phase 3). Given pasted email or SMS text, run rule-based scam-pattern detection, score the risk deterministically, and use the local Ollama model to produce a human-readable summary. Matches `FEATURES.md`: "Analyze pasted email content for common scam patterns" (Email Scanner) and "Analyze pasted SMS text for common scam patterns... Shares its analysis logic with the Email Scanner" (SMS Scanner).
 
 ## Scope
 

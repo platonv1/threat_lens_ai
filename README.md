@@ -1,4 +1,4 @@
-# AI Internet Safety Center
+# Cyber Scam Shield Assistant AI
 
 ## Description
 
