@@ -96,3 +96,7 @@ npm run lint
 ## Manual testing checklist
 
 Once the stack is up at `http://localhost:3000`, per `docs/TESTING.md`: URL scan, Screenshot upload, QR detection, Email analysis, SMS analysis, and downloading a PDF report from a fresh scan result or a History detail page.
+
+## Deploying to production
+
+This guide only covers running the app locally. `git push` does **not** update the live AWS deployment — see `docs/AWS_Deployment_Guide.md`'s "Updating the Application" section for the manual steps required to ship a change to production.

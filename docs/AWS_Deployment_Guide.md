@@ -1061,14 +1061,7 @@ Both should return `200` with no SSH session needing to stay open.
 
 ## 6. Updating the Application Going Forward
 
-After `git pull` on EC2 (see "Updating the Application" below), restart the relevant service instead of re-running the process manually:
-
-```bash
-sudo systemctl restart cyber-scam-backend.service
-sudo systemctl restart cyber-scam-frontend.service
-```
-
-If the frontend changed, rebuild first (same as Phase 13 §1): `NEXT_PUBLIC_API_URL="" npm run build`, then restart the frontend service.
+See "Updating the Application" later in this guide for the full step-by-step (pull, install new deps, run migrations, rebuild frontend if changed, then restart these services with `sudo systemctl restart cyber-scam-backend.service` / `cyber-scam-frontend.service`, then verify).
 
 ---
 
@@ -1197,71 +1190,107 @@ Cyber Scam Shield Assistant AI is now deployed to AWS.
 
 # Updating the Application
 
-Future development should always happen locally.
+**A `git push` to `main` does NOT deploy anything by itself.** There is no CI/CD pipeline for this project — GitHub only ever gets updated code, not the running EC2 instance. Production stays on whatever was last manually deployed until someone follows the steps below. Everything here assumes production is already running as the two `systemd` services from Phase 13b (`cyber-scam-backend.service`, `cyber-scam-frontend.service`) — not the bare foreground processes from Phase 12/13, which die when the SSH session closes (see the "Production 502" incident in `.claude/SESSION.md` for why this matters).
 
 Workflow:
 
 ```text
-Mac
-
-↓
-
-Develop Feature
-
-↓
-
-Test
-
-↓
-
-git add
-
-↓
-
-git commit
-
-↓
-
-git push
-
-↓
-
-GitHub
-
-↓
-
-AWS EC2
-
-↓
-
-git pull
-
-↓
-
-Restart Application
+Mac → Develop + test locally → git commit → git push → GitHub
+                                                            ↓
+                                            EC2: git pull → install any new deps
+                                                           → run new DB migrations
+                                                           → rebuild frontend (if changed)
+                                                           → restart systemd services
+                                                           → verify
 ```
 
-Example:
-
-On your Mac:
+## 1. On your Mac — push the change
 
 ```bash
-git add .
-
-git commit -m "Added phishing detection"
-
+git add <files>
+git commit -m "Describe the change"
 git push origin main
 ```
 
-On AWS:
+## 2. On EC2 — pull the change
+
+SSH in (Phase 6), then:
 
 ```bash
 cd cyber_scam_shield_assistant_ai
-
 git pull origin main
 ```
 
-Restart the application.
+## 3. Install any new dependencies
+
+Skip whichever half didn't change, but when in doubt, run it anyway — both are safe to re-run even with no new packages.
+
+```bash
+# Backend — only needed if backend/requirements.txt changed
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+cd ..
+
+# Frontend — only needed if frontend/package.json changed
+cd frontend
+npm install
+cd ..
+```
+
+**This step is the single most common cause of a broken deploy.** Pulling code that imports a new package without installing it first doesn't fail at `git pull` — it fails later, silently, when the service tries to start: the process crashes on import, `systemctl status` shows `activating (auto-restart)` in a crash loop, and `curl` against the app just gets connection-reset errors (see the `reportlab`/`ModuleNotFoundError` incident in `.claude/SESSION.md`, which hit this exact failure mode against the local Docker stack — the same class of bug applies here).
+
+## 4. Run new database migrations, if any
+
+Check whether the pulled changes included new files under `backend/migrations/versions/`:
+
+```bash
+cd backend
+source venv/bin/activate
+alembic upgrade head
+cd ..
+```
+
+Safe to run even when there's nothing new to apply — Alembic is a no-op if the DB is already at `head`. Skipping this when a migration *was* needed doesn't fail loudly either: the app starts fine and only errors the first time a request touches the missing table/column (e.g. `psycopg2.errors.UndefinedTable`) — see the `/history` schema incident in `.claude/SESSION.md`.
+
+## 5. Rebuild the frontend, if it changed
+
+The frontend is served as a compiled production build (Phase 9 §Frontend, Phase 13 §1), not run from source — `git pull` alone does not update what's served until it's rebuilt:
+
+```bash
+cd frontend
+NEXT_PUBLIC_API_URL="" npm run build
+cd ..
+```
+
+Skip this if only `backend/` changed.
+
+## 6. Restart the services
+
+```bash
+sudo systemctl restart cyber-scam-backend.service
+sudo systemctl restart cyber-scam-frontend.service
+```
+
+Only restart the one(s) that actually changed, or restart both if unsure — restarting is cheap and `Restart=on-failure` means a bad deploy won't silently stay down, but it also won't self-heal a bad *deploy* (as opposed to a crash), so always verify next.
+
+## 7. Verify
+
+From your Mac:
+
+```bash
+curl http://YOUR_PUBLIC_IP/health
+curl http://YOUR_PUBLIC_IP/
+```
+
+Both should return `200`. If either doesn't, check service status and logs on EC2 before assuming the deploy itself failed:
+
+```bash
+sudo systemctl status cyber-scam-backend.service
+sudo systemctl status cyber-scam-frontend.service
+sudo journalctl -u cyber-scam-backend.service -n 50 --no-pager
+sudo journalctl -u cyber-scam-frontend.service -n 50 --no-pager
+```
 
 The new version is now live.
 
