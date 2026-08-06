@@ -40,7 +40,7 @@ export function QRScanForm() {
         accept="image/jpeg,image/png,image/webp"
         onChange={handleImageSelect}
         disabled={status === "loading"}
-        className="block w-full text-sm text-zinc-600 dark:text-zinc-400"
+        className="block w-full text-sm text-zinc-600 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-black file:px-4 file:py-2 file:font-medium file:text-white hover:file:opacity-90 disabled:file:opacity-50 dark:text-zinc-400 dark:file:bg-white dark:file:text-black"
       />
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         Upload an image containing a QR code. The decoded URL will be scanned automatically.
