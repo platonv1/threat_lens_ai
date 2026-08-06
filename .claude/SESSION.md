@@ -234,6 +234,14 @@ With the backend healthy again, re-verified Report Export end-to-end via `curl`:
 
 No application code changed this session — this was an environment/ops fix, not a feature change.
 
+### File-upload button visibility fix (this session)
+
+User feedback: on the Screenshot tab, the native file input rendered as tiny unstyled browser chrome (just "Choose File No file chosen" text), easy to miss — unclear to a new user where to click to upload a screenshot.
+
+Found the same bare `<input type="file">` pattern (`className="block w-full text-sm text-zinc-600 dark:text-zinc-400"`, no `file:` styling) duplicated in three places: `frontend/src/components/ImageScanForm.tsx` (Screenshot tab), `QRScanForm.tsx` (QR Code tab), and `MessageScanForm.tsx` (Email/SMS "Upload image" mode). Fixed all three with Tailwind `file:` pseudo-element utilities so the native picker renders as a solid button matching the app's existing button style (`bg-black`/white text, inverted in dark mode — same convention as `ScanForm.tsx`'s Scan button), plus `file:cursor-pointer` and a `disabled:file:opacity-50` state. No markup/behavior change (id, label, `onChange`, `accept`, `disabled` all untouched) — 60/60 frontend tests and `tsc --noEmit` still pass.
+
+Verified visually in a real browser (Docker `frontend` on `npm run dev`, hot-reloaded): Screenshot tab now shows a clear white "Choose File" button next to "No file chosen" in dark mode. Commit `fa3dbfd`.
+
 ## Next Goal
 
 **All 7 roadmap phases are now complete.** Phase 7 (Report Export) closes out `docs/ROADMAP.md`'s phase list — no further phases remain. Remaining open items are all pre-existing, previously-known gaps, none newly introduced by this feature:
