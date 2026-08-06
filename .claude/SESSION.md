@@ -257,6 +257,14 @@ Also noted while investigating, not yet acted on:
 
 No application code changed this session — ops fix only.
 
+### RDS master password rotation + `/history` schema fix (this session, continuation)
+
+Followed up on the plaintext RDS password found above: generated a new strong password and rotated it. Two attempts via the **AWS Console's Modify UI** (one with special characters, one plain alphanumeric, both with "Apply immediately") silently failed to actually take effect — the console showed the instance as `Available`, but `psql`/the backend kept getting `FATAL: password authentication failed for user "postgres"` against the real RDS endpoint even minutes after the console-reported "Reset Master Password Credentials" event. Root-caused by isolating every layer: verified `backend/.env`'s `DATABASE_URL` byte-for-byte (`od -c`) and its SQLAlchemy-decoded password matched exactly what was meant to be set, then bypassed the app entirely with a bare `psql`/`PGPASSWORD` connection — same auth failure, proving the mismatch was on RDS's side, not the app/env-var/URL-encoding side (three App-side hypotheses tested and ruled out this way). Fix: ran `aws rds modify-db-instance --master-user-password ... --apply-immediately` from **AWS CloudShell** instead of the Console form — this took effect immediately (`psql` connected on the next attempt). Lesson: for this account, prefer the CLI/CloudShell over the RDS Console's Modify UI for master password changes — the UI's failure mode here was silent (no error shown, status still `Available`) rather than an explicit rejection.
+
+With DB auth fixed, `GET /history` still 500'd, now with a different, unrelated error: `psycopg2.errors.UndefinedTable: relation "scans" does not exist`. This RDS instance had never had Alembic migrations applied (`alembic current` showed no revision stamped). Ran `alembic upgrade head` from `backend/` on EC2 (with `venv` active) — applied all three existing migrations (`bd7a0f83bdb0` → `c4f2d6a9e1b3` → `f1a7c3e9b2d4`) cleanly. Verified via public IP: `/`, `/health`, and `/history` (→ `200`, `[]`) all now return `200`.
+
+No application code changed this session — ops fixes only (credential rotation + one-time schema migration on production RDS).
+
 ## Next Goal
 
 **All 7 roadmap phases are now complete.** Phase 7 (Report Export) closes out `docs/ROADMAP.md`'s phase list — no further phases remain. Remaining open items are all pre-existing, previously-known gaps, none newly introduced by this feature:
