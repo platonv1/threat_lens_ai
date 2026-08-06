@@ -18,11 +18,14 @@ def check_dns(hostname: str) -> Finding:
     if _resolves(hostname, "A") or _resolves(hostname, "AAAA"):
         return Finding(
             check="dns",
-            message=f"{hostname} has a resolvable DNS record.",
+            message=f"{hostname} is a real, working website.",
             severity="info",
         )
     return Finding(
         check="dns",
-        message=f"{hostname} has no resolvable A or AAAA record.",
+        message=(
+            f"{hostname} does not appear to be a working website — "
+            "a common warning sign of a scam or fake site."
+        ),
         severity="high",
     )

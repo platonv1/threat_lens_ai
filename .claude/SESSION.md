@@ -265,6 +265,16 @@ With DB auth fixed, `GET /history` still 500'd, now with a different, unrelated 
 
 No application code changed this session — ops fixes only (credential rotation + one-time schema migration on production RDS).
 
+### DNS finding wording, nginx timeout docs, App Guide rename (this session)
+
+Three small, independent changes:
+
+- `backend/app/services/dns_service.py`: reworded `check_dns`'s two `Finding.message` strings from technical DNS-record language ("has a resolvable DNS record" / "has no resolvable A or AAAA record") to plain-language, scam-framed wording ("is a real, working website" / "does not appear to be a working website — a common warning sign of a scam or fake site"), so the finding reads clearly for a non-technical end user. `severity`/`check` fields unchanged. `test_dns_service.py`'s two tests only assert `severity`, not message text, so no test changes were needed; 85/85 backend tests pass. One historical plan doc (`docs/superpowers/plans/2026-07-31-url-scanner-implementation.md`) still quotes the old wording — left as-is since it's a point-in-time design record, not living documentation.
+- `docs/AWS_Deployment_Guide.md`: added `proxy_connect_timeout`/`proxy_send_timeout`/`proxy_read_timeout 300s` to the nginx `/scan` and `/ocr` location blocks (default is 60s), with a note explaining why — Screenshot/QR scanning routes through EasyOCR, which is slow on a small CPU-only instance and pays a one-time ~95MB model-weight download on the first call after a fresh deploy; without the extended timeout nginx returns 502/504 before the backend finishes. `/health` and `/history` were left at the default since they're fast DB-only routes. This directly addresses the EasyOCR cold-start gap noted in earlier sessions' "Next Goal" list below — documentation-only, not yet re-applied to the live EC2 instance's actual nginx config.
+- `docs/APP_GUIDE.md` renamed to `docs/LOCAL_APP_GUIDE.md` (content unchanged) to disambiguate from `docs/AWS_Deployment_Guide.md` now that both a local-run guide and a cloud-deployment guide exist. Confirmed no other doc, `README.md`, or app code referenced the old filename.
+
+No tests needed for the doc/wording-only changes; backend test suite re-run to confirm the DNS wording change didn't break anything.
+
 ## Next Goal
 
 **All 7 roadmap phases are now complete.** Phase 7 (Report Export) closes out `docs/ROADMAP.md`'s phase list — no further phases remain. Remaining open items are all pre-existing, previously-known gaps, none newly introduced by this feature:

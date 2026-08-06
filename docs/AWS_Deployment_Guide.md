@@ -899,12 +899,18 @@ Open a **third SSH session** for this (keep the two above running):
            proxy_pass http://127.0.0.1:8000;
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr;
+           proxy_connect_timeout 300s;
+           proxy_send_timeout 300s;
+           proxy_read_timeout 300s;
        }
 
        location /ocr {
            proxy_pass http://127.0.0.1:8000;
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr;
+           proxy_connect_timeout 300s;
+           proxy_send_timeout 300s;
+           proxy_read_timeout 300s;
        }
 
        location /history {
@@ -922,6 +928,8 @@ Open a **third SSH session** for this (keep the two above running):
    ```
 
    This matches the app's actual backend route prefixes (`/health`, `/scan`, `/ocr`, `/history` — confirmed against `backend/app/api/routes/`); anything else falls through to the `location /` block, which sends it to Next.js.
+
+   `/scan` and `/ocr` get extended `proxy_*_timeout`s (nginx's default is 60s) because Screenshot Scanner and QR Scanner route through EasyOCR, which is slow on a small CPU-only instance — especially the very first call after a fresh deploy, which also pays a one-time cost downloading EasyOCR's model weights (~95MB) before it can process anything. Without this, nginx gives up and returns `502`/`504` to the browser well before the backend finishes, even though the backend keeps working in the background. `/health` and `/history` don't need it — they're fast, DB-only routes.
 
 3. Save and exit: `Ctrl + O`, `Enter`, `Ctrl + X`.
 
