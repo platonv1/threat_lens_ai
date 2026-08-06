@@ -1417,3 +1417,5 @@ curl http://3.27.171.122/health
 
 curl http://3.27.171.122/
 
+
+RDS Pass: <redacted — see password manager, not stored in this repo>
