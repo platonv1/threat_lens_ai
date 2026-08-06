@@ -242,6 +242,21 @@ Found the same bare `<input type="file">` pattern (`className="block w-full text
 
 Verified visually in a real browser (Docker `frontend` on `npm run dev`, hot-reloaded): Screenshot tab now shows a clear white "Choose File" button next to "No file chosen" in dark mode. Commit `fa3dbfd`.
 
+### Production 502 (AWS EC2) — Next.js process died, both app processes moved to systemd (this session)
+
+User reported the deployed Elastic IP returning `502 Bad Gateway`. Reproduced from the local Mac: `curl http://<public-ip>/health` → `200` (FastAPI reachable), `curl http://<public-ip>/` → `502` (Next.js not reachable). SSH'd in and confirmed via `sudo ss -tlnp`: nginx and uvicorn (port 8000) were listening, nothing was listening on port 3000 at all.
+
+Root cause: per `docs/AWS_Deployment_Guide.md` Phase 13, both `uvicorn` and `npm run start -p 3000` were started as bare foreground processes in separate SSH sessions (no `nohup`/service manager) — closing or losing either SSH session kills that process. FastAPI had at some point been manually restarted with `nohup ... & disown`, which is why it survived; Next.js never got the same treatment and had silently died.
+
+Fix: replaced both manual foreground processes with systemd units (`/etc/systemd/system/cyber-scam-backend.service`, `cyber-scam-frontend.service`), each `Restart=on-failure` and `systemctl enable`d so they also come back after an instance reboot, not just a crash. `cyber-scam-backend.service` sets `WorkingDirectory=.../backend` since `app/core/config.py` loads `.env` via `pydantic-settings`' `env_file=".env"` (a relative path). Verified end-to-end from the Mac: `curl http://<public-ip>/` → `200` and `curl http://<public-ip>/health` → `200`.
+
+Also noted while investigating, not yet acted on:
+- `GET /history` returned `500` via the public IP during this check — unrelated to the 502, not yet root-caused.
+- The IP recorded in `docs/AWS_Deployment_Guide.md`'s "NOTES" section (`3.27.171.122`) no longer matches the instance's actual current public IP — the notes section predates a stop/start IP change and needs updating (Elastic IP association should be double-checked against Phase 14 of the same doc).
+- That NOTES section also has the RDS master password in plaintext; the file is currently untracked (`git status` shows `?? docs/AWS_Deployment_Guide.md`) — flagged to the user, not yet redacted/committed.
+
+No application code changed this session — ops fix only.
+
 ## Next Goal
 
 **All 7 roadmap phases are now complete.** Phase 7 (Report Export) closes out `docs/ROADMAP.md`'s phase list — no further phases remain. Remaining open items are all pre-existing, previously-known gaps, none newly introduced by this feature:
