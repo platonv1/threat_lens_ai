@@ -35,6 +35,8 @@ No `.env` file is required — `docker-compose.yml` bakes in sensible defaults (
 
 ## Step 4 — Verify it's up
 
+If you left Step 3's `docker compose up` running in the foreground, open a **new terminal window/tab** for this (the original one is busy streaming logs). If you ran `docker compose up -d`, you can reuse the same terminal.
+
 ```bash
 curl http://localhost:8000/health
 # → {"status":"ok"}
