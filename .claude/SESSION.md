@@ -302,6 +302,12 @@ Continuation of the DNS wording pass from an earlier session — `dns_service.py
 
 Checked for other code depending on the exact old strings first — only hits were mocked `Finding` objects in unrelated tests (`test_scan_route.py`, `test_qr_scan_service.py`, `ReportCard.test.tsx`) that supply their own arbitrary message text to test rendering, not the real service output, so nothing else needed updating. All 85 backend tests pass (`.venv/bin/python3 -m pytest`, run via the venv directly — plain `python`/`python3` on PATH resolved to a Homebrew 3.14 install with no project deps, not the project's `.venv`).
 
+### Deployed SSL/WHOIS wording fix to production (this session, continuation)
+
+Deployed commit `ea92aaf` (the wording fix above, plus the mobile-HTTPS fix's `SESSION.md` entry that hadn't reached production yet) following `docs/AWS_Deployment_Guide.md`'s "Updating the Application" steps — no changes needed to that doc, it already covers this exact flow. On EC2, found the checkout wasn't clean: `frontend/package-lock.json` had a locally-modified diff that was pure npm-version churn (`"peer": true` flags shifting, optional-platform packages added/removed — no real dependency changes), matching a previously-documented precedent in this file of safely discarding that class of drift. Stashed just that file, `git pull origin main` fast-forwarded `660973c → ea92aaf` cleanly, then dropped the stash. `backend/aws/` and `backend/awscliv2.zip` (untracked leftovers from the AWS CLI install phase) were left alone — unrelated to this deploy.
+
+Only `backend/app/services/*.py` changed (no `requirements.txt`, no new migrations, no frontend changes), so only `cyber-scam-backend.service` was restarted — came up clean. Verified live over HTTPS: `POST https://www.cyberscamshieldai.site/scan/url` with `example.com` returned the new wording end-to-end (`"This website was registered 31 years ago — a sign it's likely a real, established site."`, plus the reworded SSL/DNS messages), confirming both this fix and the earlier Certbot/HTTPS setup are working together correctly.
+
 ## Next Goal
 
 **All 7 roadmap phases are now complete.** Phase 7 (Report Export) closes out `docs/ROADMAP.md`'s phase list — no further phases remain. Remaining open items are all pre-existing, previously-known gaps, none newly introduced by this feature:
